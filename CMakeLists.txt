@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 set(PROJECT_NAME ms-backend-wasm)
-project(${PROJECT_NAME})
+project(${PROJECT_NAME} LANGUAGES C CXX)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -9,4 +9,4 @@ file(GLOB SOURCE_1 "${CMAKE_SOURCE_DIR}/src/*.cc")
 include_directories("${CMAKE_SOURCE_DIR}/include")
 include_directories("${CMAKE_SOURCE_DIR}/third_party/xnnpack/build/install/include")
 
-add_executable(ms-backend-wasm ${SOURCE_1})
+add_executable(ms-backend-wasm.wasm ${SOURCE_1})

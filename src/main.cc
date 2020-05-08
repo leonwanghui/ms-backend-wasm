@@ -39,6 +39,6 @@ extern "C" {
 }  // namespace mindspore
 
 int main() {
-    std::count<<"hello, world"<<std::endl;
+    std::cout<<"hello, world"<<std::endl;
     return 0;
 }
