@@ -36,3 +36,9 @@ build/
 
 # Workspaces
 .vscode/
+
+
+#Added by cargo
+
+/target
+Cargo.lock

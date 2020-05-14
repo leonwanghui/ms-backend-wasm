@@ -1,0 +1,12 @@
+[package]
+name = "ms-frontend-rust"
+version = "0.1.0"
+authors = ["leonwanghui <wanghui71leon@gmail.com>"]
+edition = "2018"
+
+[profile.release]
+opt-level = 's'
+
+[dependencies]
+wasmtime = "0.16.0"
+anyhow = "1.0.30"

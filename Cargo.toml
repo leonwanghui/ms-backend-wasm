@@ -1,0 +1,23 @@
+[package]
+name = "ms-backend-wasm"
+version = "0.1.0"
+authors = ["leonwanghui <wanghui71leon@gmail.com>"]
+edition = "2018"
+description = "WebAssembly backend to MindSpore deep learning framework"
+readme = "README.md"
+repository = "https://github.com/leonwanghui/ms-backend-wasm"
+license = "Apache-2.0"
+keywords = ["wasm", "machine learning"]
+
+[package.metadata]
+wasm-opt = true
+wasm-name-section = false
+wasm-producers-section = false
+
+[profile.release]
+opt-level = 's'
+
+[lib]
+crate-type = ['cdylib']
+
+[dependencies]
