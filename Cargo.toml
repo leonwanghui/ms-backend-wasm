@@ -21,3 +21,5 @@ opt-level = 's'
 crate-type = ['cdylib']
 
 [dependencies]
+ndarray = "0.13.1"
+nalgebra = "0.21.0"
