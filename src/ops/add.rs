@@ -1,34 +1,60 @@
-use super::types::OpInfo;
-use ndarray::{arr2, Array2};
+use super::types::{Address, OpInfo, OpStatus};
+use ndarray::Array1;
+use std::boxed::Box;
+use std::ptr;
 
-pub struct AddOp {
-    pub input_a: Array2<i32>,
-    pub input_b: Array2<i32>,
-}
+pub struct AddOp {}
 
 impl AddOp {
     pub fn new() -> AddOp {
-        AddOp {
-            input_a: Array2::<i32>::zeros((2, 2)),
-            input_b: Array2::<i32>::zeros((2, 2)),
-        }
+        AddOp {}
     }
 }
 
 impl OpInfo for AddOp {
-    fn init(&mut self) -> bool {
-        self.input_a = arr2(&[[1, 2], [3, 4]]);
-        self.input_b = arr2(&[[5, 6], [7, 8]]);
+    fn init(&mut self) -> OpStatus {
         println!("AddOp init success!");
-        true
+        OpStatus::Succeed
     }
 
-    fn run(&self) -> i32 {
-        let z = &self.input_a + &self.input_b;
-        println!("AddOp result is {}", z);
+    fn launch(
+        &self,
+        inputs: *const Vec<Box<Address>>,
+        outputs: *mut Vec<Box<Address>>,
+    ) -> OpStatus {
+        unsafe {
+            if inputs.as_ref().unwrap().len() != 2 && outputs.as_ref().unwrap().len() != 1 {
+                println!("Inputs outputs size not support");
+                return OpStatus::LaunchFailed;
+            }
+        }
+
+        let mut vec = Vec::default();
+        unsafe {
+            for i in 0..inputs.as_ref().unwrap()[0].size {
+                vec.push(ptr::read(
+                    inputs.as_ref().unwrap()[0].addr.offset(i as isize),
+                ));
+            }
+        }
+        let left = Array1::from(vec);
+        let mut vec = Vec::default();
+        unsafe {
+            for i in 0..inputs.as_ref().unwrap()[1].size {
+                vec.push(ptr::read(
+                    inputs.as_ref().unwrap()[1].addr.offset(i as isize),
+                ));
+            }
+        }
+        let right = Array1::from(vec);
+
+        let result = &left + &right;
+        println!("AddOp result is {}", result);
         println!("AddOp run success!");
-        let res_raw_ptr = z.as_ptr();
-        let res = res_raw_ptr as i32;
-        res
+        // let output_addr = Box::new(Address::new(result.as_ptr(), result.len() as i32));
+        // unsafe {
+        //     outputs.as_ref().unwrap().push(output_addr);
+        // }
+        OpStatus::Succeed
     }
 }

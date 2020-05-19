@@ -1,11 +1,15 @@
 mod add;
-mod inverse;
+mod argmax;
+mod equal_count;
 mod mul;
-mod types;
+mod reshape;
+pub mod types;
 
 use add::AddOp;
-use inverse::InverseOp;
+use argmax::ArgmaxOp;
+use equal_count::EqualCountOp;
 use mul::MulOp;
+use reshape::ReshapeOp;
 use std::boxed::Box;
 use types::{OpInfo, OpType};
 
@@ -14,8 +18,12 @@ pub fn parse_optype(op_type: i32) -> Box<dyn OpInfo> {
         Box::new(AddOp::new())
     } else if op_type == OpType::Mul as i32 {
         Box::new(MulOp::new())
-    } else if op_type == OpType::Inverse as i32 {
-        Box::new(InverseOp::new())
+    } else if op_type == OpType::Argmax as i32 {
+        Box::new(ArgmaxOp::new())
+    } else if op_type == OpType::EqualCount as i32 {
+        Box::new(EqualCountOp::new())
+    } else if op_type == OpType::Reshape as i32 {
+        Box::new(ReshapeOp::new())
     } else {
         Box::new(AddOp::new())
     }
