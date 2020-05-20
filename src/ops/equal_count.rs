@@ -21,36 +21,43 @@ impl OpInfo for EqualCountOp {
         inputs: *const Vec<Box<Address>>,
         outputs: *mut Vec<Box<Address>>,
     ) -> OpStatus {
-        unsafe {
-            if inputs.as_ref().unwrap().len() != 1 && outputs.as_ref().unwrap().len() != 1 {
-                println!("Inputs outputs size not support");
-                return OpStatus::LaunchFailed;
-            }
+        let input_vec = unsafe { inputs.as_ref().unwrap() };
+
+        if input_vec.len() < 2 {
+            println!("Inputs vector length should be over 2!");
+            return OpStatus::LaunchFailed;
+        }
+        if input_vec[0].size != input_vec[1].size {
+            println!("Inputs size not equal!");
+            return OpStatus::LaunchFailed;
         }
 
-        let mut left = Vec::default();
-        let mut right = Vec::default();
+        let mut left = Vec::new();
+        let mut right = Vec::new();
         let mut num = 0;
-        unsafe {
-            for i in 0..inputs.as_ref().unwrap()[0].size {
-                left.push(ptr::read(
-                    inputs.as_ref().unwrap()[0].addr.offset(i as isize),
-                ));
+        for i in 0..input_vec[0].size {
+            unsafe {
+                left.push(ptr::read(input_vec[0].addr.offset(i as isize)));
             }
-            for i in 0..inputs.as_ref().unwrap()[0].size {
-                right.push(ptr::read(
-                    inputs.as_ref().unwrap()[0].addr.offset(i as isize),
-                ));
+        }
+        for i in 0..input_vec[0].size {
+            unsafe {
+                right.push(ptr::read(input_vec[0].addr.offset(i as isize)));
             }
-            for i in 0..inputs.as_ref().unwrap()[0].size {
-                if left[i as usize] == right[i as usize] {
-                    num += 1;
-                }
+        }
+        for i in 0..input_vec[0].size {
+            if left[i as usize] == right[i as usize] {
+                num += 1;
             }
-            let output_addr = Box::new(Address::new(&mut num, 1));
-            // outputs.as_ref().unwrap().push(output_addr);
         }
         println!("EqualCountOp result is {}", num);
+
+        let output_addr = Box::new(Address::new(&mut num, 1));
+        let mut output_vec = Vec::new();
+        output_vec.push(output_addr);
+        unsafe {
+            *outputs = output_vec;
+        }
         println!("EqualCountOp run success!");
         OpStatus::Succeed
     }

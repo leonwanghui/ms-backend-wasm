@@ -22,39 +22,39 @@ impl OpInfo for AddOp {
         inputs: *const Vec<Box<Address>>,
         outputs: *mut Vec<Box<Address>>,
     ) -> OpStatus {
-        unsafe {
-            if inputs.as_ref().unwrap().len() != 2 && outputs.as_ref().unwrap().len() != 1 {
-                println!("Inputs outputs size not support");
-                return OpStatus::LaunchFailed;
-            }
+        let input_vec = unsafe { inputs.as_ref().unwrap() };
+        let output_vec = unsafe { outputs.as_ref().unwrap() };
+
+        if input_vec.len() != 2 || output_vec.len() != 1 {
+            println!("Inputs vector length should be 2, outputs vector length should be 1!");
+            return OpStatus::LaunchFailed;
         }
 
-        let mut vec = Vec::default();
-        unsafe {
-            for i in 0..inputs.as_ref().unwrap()[0].size {
-                vec.push(ptr::read(
-                    inputs.as_ref().unwrap()[0].addr.offset(i as isize),
-                ));
+        let mut vec = Vec::new();
+        for i in 0..input_vec[0].size {
+            unsafe {
+                vec.push(ptr::read(input_vec[0].addr.offset(i as isize)));
             }
         }
         let left = Array1::from(vec);
-        let mut vec = Vec::default();
-        unsafe {
-            for i in 0..inputs.as_ref().unwrap()[1].size {
-                vec.push(ptr::read(
-                    inputs.as_ref().unwrap()[1].addr.offset(i as isize),
-                ));
+        let mut vec = Vec::new();
+
+        for i in 0..input_vec[1].size {
+            unsafe {
+                vec.push(ptr::read(input_vec[1].addr.offset(i as isize)));
             }
         }
         let right = Array1::from(vec);
-
         let result = &left + &right;
         println!("AddOp result is {}", result);
+
+        let output_addr = Box::new(Address::new(result.as_ptr(), result.len() as i32));
+        let mut output_vec = Vec::new();
+        output_vec.push(output_addr);
+        unsafe {
+            *outputs = output_vec;
+        }
         println!("AddOp run success!");
-        // let output_addr = Box::new(Address::new(result.as_ptr(), result.len() as i32));
-        // unsafe {
-        //     outputs.as_ref().unwrap().push(output_addr);
-        // }
         OpStatus::Succeed
     }
 }
