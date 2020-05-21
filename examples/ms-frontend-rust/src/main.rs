@@ -1,6 +1,12 @@
 use anyhow::Result;
+use serde_json;
 use wasmtime::*;
 use wasmtime_wasi::{Wasi, WasiCtx};
+
+pub struct Address<T> {
+    pub addr: *const T,
+    pub size: i32,
+}
 
 fn main() -> Result<()> {
     let store = Store::default();
@@ -18,15 +24,22 @@ fn main() -> Result<()> {
         .ok_or(anyhow::format_err!("failed to find `memory` export"))?;
 
     let op_type: i32 = 0;
-    let in_l_addr = 0x1000;
-    let in_r_addr = 0x2000;
-    let out_addr = 0x3000;
-    let in_size: i32 = 3;
-    let out_size: i32 = 3;
-    for i in 1..4 {
+    let in_addr = 0x1000;
+    let out_addr = 0x2000;
+
+    let mut input_vec = Vec::new();
+    input_vec.push(Box::new(vec![1, 2, 3]));
+    input_vec.push(Box::new(vec![4, 5, 6]));
+    println!("input = {:?}", input_vec);
+    let mut out_vec = Vec::new();
+    out_vec.push(Box::new(vec![0, 0, 0]));
+    // Serialize the data into a JSON string.
+    let in_data = serde_json::to_vec(&input_vec)?;
+    let in_size = in_data.len();
+    // Insert the input data into wasm memory.
+    for i in 0..in_size {
         unsafe {
-            memory.data_unchecked_mut()[in_l_addr + i] = i as u8;
-            memory.data_unchecked_mut()[in_r_addr + i] = i as u8;
+            memory.data_unchecked_mut()[in_addr + i] = *in_data.get(i).unwrap();
         }
     }
 
@@ -34,25 +47,12 @@ fn main() -> Result<()> {
     let run = instance
         .get_func("run")
         .ok_or(anyhow::format_err!("failed to find `run` function export!"))?
-        .get7::<i32, i32, i32, i32, i32, i32, i32, i32>()?;
+        .get4::<i32, i32, i32, i32, i32>()?;
 
-    println!(
-        "run({}) = {}",
-        op_type,
-        run(
-            op_type,
-            in_l_addr as i32,
-            in_size,
-            in_r_addr as i32,
-            in_size,
-            out_addr as i32,
-            out_size
-        )?
-    );
-    unsafe {
-        assert_eq!(memory.data_unchecked()[0x3000], 2);
-        assert_eq!(memory.data_unchecked()[0x3001], 4);
-        assert_eq!(memory.data_unchecked()[0x3002], 6);
-    }
+    let out_size = run(op_type, in_addr as i32, in_size as i32, out_addr as i32)?;
+
+    let out_data = unsafe { &memory.data_unchecked()[out_addr..][..out_size as usize] };
+    let out_vec: Vec<Box<Vec<i32>>> = serde_json::from_slice(out_data).unwrap();
+    println!("output = {:?}", out_vec);
     Ok(())
 }

@@ -1,22 +1,22 @@
 pub mod ops;
-use ops::{parse_inputs_outputs, parse_optype};
+
+use ops::types::OpStatus;
+use ops::{load_inputs, parse_optype, store_outputs};
 
 #[no_mangle]
-pub extern "C" fn run(
-    op_type: i32,
-    in_l_addr: i32,
-    in_l_size: i32,
-    in_r_addr: i32,
-    in_r_size: i32,
-    out_addr: i32,
-    out_size: i32,
-) -> i32 {
+pub extern "C" fn run(op_type: i32, in_addr: i32, in_size: i32, out_addr: i32) -> i32 {
     let mut op = parse_optype(op_type);
 
-    let (inputs, mut outputs) = parse_inputs_outputs(
-        in_l_addr, in_l_size, in_r_addr, in_r_size, out_addr, out_size,
-    );
+    let inputs = load_inputs(in_addr, in_size);
 
-    op.init();
-    op.launch(&inputs, &mut outputs) as i32
+    if op.init() != OpStatus::Succeed {
+        return 0;
+    };
+
+    let (stat, outputs) = op.launch(inputs);
+    if stat != OpStatus::Succeed {
+        return 0;
+    }
+
+    store_outputs(out_addr, outputs)
 }

@@ -1,6 +1,5 @@
-use super::types::{Address, OpInfo, OpStatus};
+use super::types::{OpInfo, OpStatus};
 use std::boxed::Box;
-use std::ptr;
 
 pub struct EqualCountOp {}
 
@@ -16,49 +15,26 @@ impl OpInfo for EqualCountOp {
         OpStatus::Succeed
     }
 
-    fn launch(
-        &self,
-        inputs: *const Vec<Box<Address>>,
-        outputs: *mut Vec<Box<Address>>,
-    ) -> OpStatus {
-        let input_vec = unsafe { inputs.as_ref().unwrap() };
-
-        if input_vec.len() < 2 {
-            println!("Inputs vector length should be over 2!");
-            return OpStatus::LaunchFailed;
+    fn launch(&self, inputs: Vec<Box<Vec<i32>>>) -> (OpStatus, Vec<Box<Vec<i32>>>) {
+        if inputs.len() != 2 {
+            println!("Inputs vector length should be 2!");
+            return (OpStatus::LaunchFailed, vec![Box::new(Vec::new())]);
         }
-        if input_vec[0].size != input_vec[1].size {
+        if inputs[0].len() != inputs[1].len() {
             println!("Inputs size not equal!");
-            return OpStatus::LaunchFailed;
+            return (OpStatus::LaunchFailed, vec![Box::new(Vec::new())]);
         }
 
-        let mut left = Vec::new();
-        let mut right = Vec::new();
         let mut num = 0;
-        for i in 0..input_vec[0].size {
-            unsafe {
-                left.push(ptr::read(input_vec[0].addr.offset(i as isize)));
-            }
-        }
-        for i in 0..input_vec[0].size {
-            unsafe {
-                right.push(ptr::read(input_vec[0].addr.offset(i as isize)));
-            }
-        }
-        for i in 0..input_vec[0].size {
-            if left[i as usize] == right[i as usize] {
+        for i in 0..inputs[0].len() {
+            if inputs[0][i as usize] == inputs[1][i as usize] {
                 num += 1;
             }
         }
-        println!("EqualCountOp result is {}", num);
 
-        let output_addr = Box::new(Address::new(&mut num, 1));
         let mut output_vec = Vec::new();
-        output_vec.push(output_addr);
-        unsafe {
-            *outputs = output_vec;
-        }
+        output_vec.push(Box::new(vec![num]));
         println!("EqualCountOp run success!");
-        OpStatus::Succeed
+        (OpStatus::Succeed, output_vec)
     }
 }

@@ -1,7 +1,6 @@
-use super::types::{Address, OpInfo, OpStatus};
+use super::types::{OpInfo, OpStatus};
 use nalgebra::Vector3;
 use std::boxed::Box;
-use std::ptr;
 
 pub struct ArgmaxOp {}
 
@@ -17,37 +16,18 @@ impl OpInfo for ArgmaxOp {
         OpStatus::Succeed
     }
 
-    fn launch(
-        &self,
-        inputs: *const Vec<Box<Address>>,
-        outputs: *mut Vec<Box<Address>>,
-    ) -> OpStatus {
-        let input_vec = unsafe { inputs.as_ref().unwrap() };
-        let output_vec = unsafe { outputs.as_ref().unwrap() };
-
-        if input_vec.len() != 1 || output_vec.len() != 1 {
-            println!("Inputs and outputs vector length should be 1!");
-            return OpStatus::LaunchFailed;
-        }
-        let vec = Vector3::new(0, 0, 0);
-
-        for i in 0..input_vec[0].size {
-            unsafe {
-                vec.push(ptr::read(input_vec[0].addr.offset(i as isize)));
-            }
+    fn launch(&self, inputs: Vec<Box<Vec<i32>>>) -> (OpStatus, Vec<Box<Vec<i32>>>) {
+        if inputs.len() != 2 {
+            println!("Inputs vector length should be 1!");
+            return (OpStatus::LaunchFailed, vec![Box::new(Vec::new())]);
         }
 
-        let res_tuple = vec.argmax();
-        let result = (res_tuple.0 as i32, res_tuple.1);
-        println!("ArgmaxOp result is {:?}", result);
-        let result_ptr: *const i32 = &result.0;
-        let output_addr = Box::new(Address::new(result_ptr, 1));
+        let vec = Vector3::new(1, 2, 3);
+        let result = vec.argmax();
+
         let mut output_vec = Vec::new();
-        output_vec.push(output_addr);
-        unsafe {
-            *outputs = output_vec;
-        }
+        output_vec.push(Box::new(vec![result.0 as i32, result.1]));
         println!("ArgmaxOp run success!");
-        OpStatus::Succeed
+        (OpStatus::Succeed, output_vec)
     }
 }

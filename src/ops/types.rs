@@ -1,13 +1,14 @@
 use std::boxed::Box;
 
+#[derive(PartialEq)]
 pub enum OpType {
     Add,
     Mul,
     Argmax,
-    Reshape,
     EqualCount,
 }
 
+#[derive(PartialEq)]
 pub enum OpStatus {
     Succeed,
     InitFailed,
@@ -17,20 +18,5 @@ pub enum OpStatus {
 pub trait OpInfo {
     fn init(&mut self) -> OpStatus;
 
-    fn launch(&self, inputs: *const Vec<Box<Address>>, outputs: *mut Vec<Box<Address>>)
-        -> OpStatus;
-}
-
-pub struct Address {
-    pub addr: *const i32,
-    pub size: i32,
-}
-
-impl Address {
-    pub fn new(addr: *const i32, size: i32) -> Self {
-        Address {
-            addr: addr,
-            size: size,
-        }
-    }
+    fn launch(&self, inputs: Vec<Box<Vec<i32>>>) -> (OpStatus, Vec<Box<Vec<i32>>>);
 }
