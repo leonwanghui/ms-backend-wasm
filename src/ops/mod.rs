@@ -12,7 +12,7 @@ use mul::MulOp;
 use serde_json;
 use std::boxed::Box;
 use std::ptr;
-use types::{NumberType, OpType, Operator};
+use types::{OpType, Operator, Tensor};
 
 pub fn operator_instantiate(op_type: i32) -> Box<dyn Operator> {
     if op_type == OpType::Add as i32 {
@@ -28,27 +28,19 @@ pub fn operator_instantiate(op_type: i32) -> Box<dyn Operator> {
     }
 }
 
-pub fn parse_num_type(num_type: i32) -> NumberType {
-    match num_type {
-        0 => NumberType::FP32(1.0f32),
-        1 => NumberType::INT8(1i8),
-        _ => NumberType::FP32(1.0f32),
-    }
-}
-
-pub fn load_inputs(in_addr: i32, in_size: i32) -> Vec<Box<Vec<NumberType>>> {
+pub fn load_inputs(in_addr: i32, in_size: i32) -> Vec<Box<Tensor>> {
     let in_addr = in_addr as *mut u8;
 
     let mut data_vec = Vec::new();
     for i in 0..in_size {
         data_vec.push(unsafe { ptr::read(in_addr.offset(i as isize)) });
     }
-    let inputs: Vec<Box<Vec<NumberType>>> = serde_json::from_slice(&data_vec).unwrap();
+    let inputs: Vec<Box<Tensor>> = serde_json::from_slice(&data_vec).unwrap();
 
     inputs
 }
 
-pub fn store_outputs(out_addr: i32, outputs: Vec<Box<Vec<NumberType>>>) -> i32 {
+pub fn store_outputs(out_addr: i32, outputs: Vec<Box<Tensor>>) -> i32 {
     let out_addr = out_addr as *mut u8;
 
     let data_vec = serde_json::to_vec(&outputs).unwrap();

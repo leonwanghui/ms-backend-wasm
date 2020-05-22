@@ -8,22 +8,62 @@ use anyhow::Result;
 use wasmtime::*;
 use wasmtime_wasi::{Wasi, WasiCtx};
 
+// #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+// pub enum NumberType {
+//     FP32(f32),
+//     INT8(i8),
+//     DEFAULT(usize),
+// }
+
+// impl From<f32> for NumberType {
+//     fn from(num: f32) -> Self {
+//         NumberType::FP32(num)
+//     }
+// }
+
+// impl From<i8> for NumberType {
+//     fn from(num: i8) -> Self {
+//         NumberType::INT8(num)
+//     }
+// }
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum NumberType {
-    FP32(f32),
-    INT8(i8),
-    DEFAULT(usize),
+pub enum Tensor {
+    Boolean(bool),
+    Numeric(f32),
+    OneDArray(Vec<f32>),
+    TwoDArray(Vec<Vec<f32>>),
+    ThreeDArray(Vec<Vec<Vec<f32>>>),
+    Default(usize),
 }
 
-impl From<f32> for NumberType {
-    fn from(num: f32) -> Self {
-        NumberType::FP32(num)
+impl From<bool> for Tensor {
+    fn from(data: bool) -> Self {
+        Tensor::Boolean(data)
     }
 }
 
-impl From<i8> for NumberType {
-    fn from(num: i8) -> Self {
-        NumberType::INT8(num)
+impl From<f32> for Tensor {
+    fn from(data: f32) -> Self {
+        Tensor::Numeric(data)
+    }
+}
+
+impl From<Vec<f32>> for Tensor {
+    fn from(data: Vec<f32>) -> Self {
+        Tensor::OneDArray(data)
+    }
+}
+
+impl From<Vec<Vec<f32>>> for Tensor {
+    fn from(data: Vec<Vec<f32>>) -> Self {
+        Tensor::TwoDArray(data)
+    }
+}
+
+impl From<Vec<Vec<Vec<f32>>>> for Tensor {
+    fn from(data: Vec<Vec<Vec<f32>>>) -> Self {
+        Tensor::ThreeDArray(data)
     }
 }
 
@@ -45,26 +85,21 @@ fn main() -> Result<()> {
     // Choose op_type to change the operator type with the follow options:
     //   0: AddOp, 1: MulOp, 2: ArgmaxOp, 3: EqualCountOp, 4..: AddOp
     let op_type: i32 = 0;
-    // Choose num_type to change the element type with the follow options:
-    //   0: f32, 1: i8, 2..: f32
-    let num_type: i32 = 0;
+    // Choose data_type to change the data type with the follow options:
+    //   0: bool, 1: f32, 2: Vec<f32>, 3: Vec<Vec<f32>>, 4..: Vec<Vec<Vec<f32>>>
+    let data_type: i32 = 2;
+    let input_data = vec![
+        Box::new(Tensor::from(vec![1.0f32, 2.0f32, 3.0f32])),
+        Box::new(Tensor::from(vec![4.0f32, 5.0f32, 6.0f32])),
+    ];
+    let dim_size: i32 = 1;
+    let shape_list = (3, 0, 0);
     let in_addr = 0x1000;
     let out_addr = 0x2000;
 
-    let mut input_vec = Vec::new();
-    input_vec.push(Box::new(vec![
-        NumberType::from(1.0f32),
-        NumberType::from(2.0f32),
-        NumberType::from(3.0f32),
-    ]));
-    input_vec.push(Box::new(vec![
-        NumberType::from(4.0f32),
-        NumberType::from(5.0f32),
-        NumberType::from(6.0f32),
-    ]));
-    println!("input = {:?}", input_vec);
+    println!("input = {:?}", input_data);
     // Serialize the data into a JSON string.
-    let in_data = serde_json::to_vec(&input_vec)?;
+    let in_data = serde_json::to_vec(&input_data)?;
     let in_size = in_data.len();
     // Insert the input data into wasm memory.
     for i in 0..in_size {
@@ -77,11 +112,15 @@ fn main() -> Result<()> {
     let run = instance
         .get_func("run")
         .ok_or(anyhow::format_err!("failed to find `run` function export!"))?
-        .get5::<i32, i32, i32, i32, i32, i32>()?;
+        .get9::<i32, i32, i32, i32, i32, i32, i32, i32, i32, i32>()?;
 
     let out_size = run(
         op_type,
-        num_type,
+        data_type,
+        dim_size,
+        shape_list.0 as i32,
+        shape_list.1 as i32,
+        shape_list.2 as i32,
         in_addr as i32,
         in_size as i32,
         out_addr as i32,
@@ -91,7 +130,7 @@ fn main() -> Result<()> {
     }
 
     let out_data = unsafe { &memory.data_unchecked()[out_addr..][..out_size as usize] };
-    let out_vec: Vec<Box<Vec<NumberType>>> = serde_json::from_slice(out_data).unwrap();
+    let out_vec: Vec<Box<Tensor>> = serde_json::from_slice(out_data).unwrap();
     println!("output = {:?}", out_vec);
     Ok(())
 }
