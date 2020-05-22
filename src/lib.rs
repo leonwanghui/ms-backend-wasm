@@ -1,22 +1,32 @@
-pub mod ops;
+#[macro_use]
+extern crate serde_derive;
 
+extern crate serde;
+extern crate serde_json;
+
+mod ops;
 use ops::types::OpStatus;
-use ops::{load_inputs, parse_optype, store_outputs};
 
 #[no_mangle]
-pub extern "C" fn run(op_type: i32, in_addr: i32, in_size: i32, out_addr: i32) -> i32 {
-    let mut op = parse_optype(op_type);
+pub extern "C" fn run(
+    op_type: i32,
+    num_type: i32,
+    in_addr: i32,
+    in_size: i32,
+    out_addr: i32,
+) -> i32 {
+    let mut op_instance = ops::operator_instantiate(op_type);
+    let number_type = ops::parse_num_type(num_type);
+    let inputs = ops::load_inputs(in_addr, in_size);
 
-    let inputs = load_inputs(in_addr, in_size);
-
-    if op.init() != OpStatus::Succeed {
+    if op_instance.init(number_type) != OpStatus::Succeed {
         return 0;
     };
 
-    let (stat, outputs) = op.launch(inputs);
+    let (stat, outputs) = op_instance.launch(inputs);
     if stat != OpStatus::Succeed {
         return 0;
     }
 
-    store_outputs(out_addr, outputs)
+    ops::store_outputs(out_addr, outputs)
 }

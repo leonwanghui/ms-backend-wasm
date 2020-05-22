@@ -1,32 +1,50 @@
-use super::types::{OpInfo, OpStatus};
-use nalgebra::Vector3;
+use super::types::{NumberType, OpStatus, Operator};
+use super::utils;
+use nalgebra::DVector;
 use std::boxed::Box;
 
-pub struct ArgmaxOp {}
+pub struct ArgmaxOp {
+    num_type: Option<NumberType>,
+}
 
 impl ArgmaxOp {
     pub fn new() -> ArgmaxOp {
-        ArgmaxOp {}
+        ArgmaxOp { num_type: None }
     }
 }
 
-impl OpInfo for ArgmaxOp {
-    fn init(&mut self) -> OpStatus {
+impl Operator for ArgmaxOp {
+    fn init(&mut self, number_type: NumberType) -> OpStatus {
+        self.num_type = Some(number_type);
         println!("ArgmaxOp init success!");
         OpStatus::Succeed
     }
 
-    fn launch(&self, inputs: Vec<Box<Vec<i32>>>) -> (OpStatus, Vec<Box<Vec<i32>>>) {
-        if inputs.len() != 2 {
-            println!("Inputs vector length should be 1!");
-            return (OpStatus::LaunchFailed, vec![Box::new(Vec::new())]);
+    fn launch(&self, inputs: Vec<Box<Vec<NumberType>>>) -> (OpStatus, Vec<Box<Vec<NumberType>>>) {
+        if inputs.len() == 0 {
+            println!("Inputs vector length should not be zero!");
+            return (OpStatus::LaunchFailed, Vec::new());
         }
 
-        let vec = Vector3::new(1, 2, 3);
-        let result = vec.argmax();
-
         let mut output_vec = Vec::new();
-        output_vec.push(Box::new(vec![result.0 as i32, result.1]));
+        if self.num_type == Some(NumberType::FP32(1.0f32)) {
+            let input_vec = utils::vec_num_type_fp32_to_f32(inputs[0].to_vec());
+            let result = DVector::from_vec(input_vec).argmax();
+            output_vec.push(Box::new(vec![
+                NumberType::from(result.0),
+                NumberType::from(result.1),
+            ]));
+        } else if self.num_type == Some(NumberType::INT8(1i8)) {
+            let input_vec = utils::vec_num_type_int8_to_i8(inputs[0].to_vec());
+            let result = DVector::from_vec(input_vec).argmax();
+            output_vec.push(Box::new(vec![
+                NumberType::from(result.0),
+                NumberType::from(result.1),
+            ]));
+        } else {
+            return (OpStatus::LaunchFailed, Vec::new());
+        }
+
         println!("ArgmaxOp run success!");
         (OpStatus::Succeed, output_vec)
     }

@@ -1,11 +1,30 @@
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+extern crate serde_json;
+
 use anyhow::Result;
-use serde_json;
 use wasmtime::*;
 use wasmtime_wasi::{Wasi, WasiCtx};
 
-pub struct Address<T> {
-    pub addr: *const T,
-    pub size: i32,
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+pub enum NumberType {
+    FP32(f32),
+    INT8(i8),
+    DEFAULT(usize),
+}
+
+impl From<f32> for NumberType {
+    fn from(num: f32) -> Self {
+        NumberType::FP32(num)
+    }
+}
+
+impl From<i8> for NumberType {
+    fn from(num: i8) -> Self {
+        NumberType::INT8(num)
+    }
 }
 
 fn main() -> Result<()> {
@@ -23,16 +42,27 @@ fn main() -> Result<()> {
         .get_memory("memory")
         .ok_or(anyhow::format_err!("failed to find `memory` export"))?;
 
+    // Choose op_type to change the operator type with the follow options:
+    //   0: AddOp, 1: MulOp, 2: ArgmaxOp, 3: EqualCountOp, 4..: AddOp
     let op_type: i32 = 0;
+    // Choose num_type to change the element type with the follow options:
+    //   0: f32, 1: i8, 2..: f32
+    let num_type: i32 = 0;
     let in_addr = 0x1000;
     let out_addr = 0x2000;
 
     let mut input_vec = Vec::new();
-    input_vec.push(Box::new(vec![1, 2, 3]));
-    input_vec.push(Box::new(vec![4, 5, 6]));
+    input_vec.push(Box::new(vec![
+        NumberType::from(1.0f32),
+        NumberType::from(2.0f32),
+        NumberType::from(3.0f32),
+    ]));
+    input_vec.push(Box::new(vec![
+        NumberType::from(4.0f32),
+        NumberType::from(5.0f32),
+        NumberType::from(6.0f32),
+    ]));
     println!("input = {:?}", input_vec);
-    let mut out_vec = Vec::new();
-    out_vec.push(Box::new(vec![0, 0, 0]));
     // Serialize the data into a JSON string.
     let in_data = serde_json::to_vec(&input_vec)?;
     let in_size = in_data.len();
@@ -47,12 +77,21 @@ fn main() -> Result<()> {
     let run = instance
         .get_func("run")
         .ok_or(anyhow::format_err!("failed to find `run` function export!"))?
-        .get4::<i32, i32, i32, i32, i32>()?;
+        .get5::<i32, i32, i32, i32, i32, i32>()?;
 
-    let out_size = run(op_type, in_addr as i32, in_size as i32, out_addr as i32)?;
+    let out_size = run(
+        op_type,
+        num_type,
+        in_addr as i32,
+        in_size as i32,
+        out_addr as i32,
+    )?;
+    if out_size == 0 {
+        panic!("Opeartor {} run failed!", op_type);
+    }
 
     let out_data = unsafe { &memory.data_unchecked()[out_addr..][..out_size as usize] };
-    let out_vec: Vec<Box<Vec<i32>>> = serde_json::from_slice(out_data).unwrap();
+    let out_vec: Vec<Box<Vec<NumberType>>> = serde_json::from_slice(out_data).unwrap();
     println!("output = {:?}", out_vec);
     Ok(())
 }
