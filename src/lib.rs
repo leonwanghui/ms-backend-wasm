@@ -5,36 +5,49 @@ extern crate serde;
 extern crate serde_json;
 
 mod ops;
-use ops::types::OpStatus;
+use ops::types::Status;
 
 #[no_mangle]
 pub extern "C" fn run(
     op_type: i32,
     data_type: i32,
-    dim_size: i32,
-    shape_1d_size: i32,
-    shape_2d_size: i32,
-    shape_3d_size: i32,
+    a_dim_size: i32,
+    a_shape_x: i32,
+    a_shape_y: i32,
+    a_shape_z: i32,
+    b_dim_size: i32,
+    b_shape_x: i32,
+    b_shape_y: i32,
+    b_shape_z: i32,
     in_addr: i32,
     in_size: i32,
     out_addr: i32,
 ) -> i32 {
-    let mut op_instance = ops::operator_instantiate(op_type);
-    let inputs = ops::load_inputs(in_addr, in_size);
+    let (stat, dtype) = ops::parse_data_type(data_type as usize);
+    if stat != Status::Succeed {
+        return 0i32;
+    }
+    let inputs = ops::load_inputs(in_addr, in_size as usize);
+    let a_shape = (a_shape_x as usize, a_shape_y as usize, a_shape_z as usize);
+    let b_shape = (b_shape_x as usize, b_shape_y as usize, b_shape_z as usize);
 
-    let shape_slice = vec![
-        shape_1d_size as usize,
-        shape_2d_size as usize,
-        shape_3d_size as usize,
-    ];
-    if op_instance.init(data_type, shape_slice, dim_size as usize) != OpStatus::Succeed {
-        return 0;
+    let mut op_instance = ops::operator_instantiate(op_type as usize);
+    if op_instance.init(
+        dtype,
+        a_shape,
+        a_dim_size as usize,
+        b_shape,
+        b_dim_size as usize,
+    ) != Status::Succeed
+    {
+        return 0i32;
     };
 
     let (stat, outputs) = op_instance.launch(inputs);
-    if stat != OpStatus::Succeed {
-        return 0;
+    if stat != Status::Succeed {
+        return 0i32;
     }
 
-    ops::store_outputs(out_addr, outputs)
+    let out_size = ops::store_outputs(out_addr, outputs);
+    out_size as i32
 }

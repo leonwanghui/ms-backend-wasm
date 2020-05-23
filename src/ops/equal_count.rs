@@ -1,9 +1,9 @@
-use super::types::{DataType, OpStatus, Operator, Tensor};
+use super::types::*;
 use std::boxed::Box;
 
 pub struct EqualCountOp {
     data_type: Option<DataType>,
-    shape: Vec<usize>,
+    shape: Option<(usize, usize, usize)>,
     dim_size: usize,
 }
 
@@ -11,88 +11,88 @@ impl EqualCountOp {
     pub fn new() -> EqualCountOp {
         EqualCountOp {
             data_type: None,
-            shape: Vec::new(),
+            shape: None,
             dim_size: 0,
         }
     }
 }
 
 impl Operator for EqualCountOp {
-    fn init(&mut self, data_type: i32, shape: Vec<usize>, dim_size: usize) -> OpStatus {
-        match data_type {
-            0 => {
-                self.data_type = Some(DataType::BooleanType);
-            }
-            1 => {
-                self.data_type = Some(DataType::NumericType);
-            }
-            2 => {
-                self.data_type = Some(DataType::OneDArrayType);
-            }
-            3 => {
-                self.data_type = Some(DataType::TwoDArrayType);
-            }
-            4 => {
-                self.data_type = Some(DataType::ThreeDArrayType);
-            }
-            _ => {
-                println!("Unknown data type provided!");
-                return OpStatus::InitFailed;
-            }
+    fn init(
+        &mut self,
+        data_type: DataType,
+        a_shape: (usize, usize, usize),
+        a_dim_size: usize,
+        b_shape: (usize, usize, usize),
+        b_dim_size: usize,
+    ) -> Status {
+        if a_dim_size != b_dim_size
+            || a_shape.0 != b_shape.0
+            || a_shape.1 != b_shape.1
+            || a_shape.2 != b_shape.2
+        {
+            println!("Both dimension and shape for EqualCount operator should be equal!");
+            return Status::InitFailed;
         }
-        self.shape = shape;
-        self.dim_size = dim_size;
-        println!("EqualCountOp init success!");
-        OpStatus::Succeed
+
+        self.data_type = Some(data_type);
+        self.shape = Some(a_shape);
+        self.dim_size = a_dim_size;
+        println!("EqualCount operator init success!");
+        Status::Succeed
     }
 
-    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (OpStatus, Vec<Box<Tensor>>) {
+    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorResult>>) {
         if inputs.len() != 2 {
             println!("Inputs vector length should be 2!");
-            return (OpStatus::LaunchFailed, vec![Box::new(Tensor::from(false))]);
+            return (
+                Status::LaunchFailed,
+                vec![Box::new(TensorResult::default())],
+            );
         }
 
         let mut num = 0;
         match self.data_type {
-            Some(DataType::BooleanType) => {
-                let left = inputs[0].cast_bool();
-                let right = inputs[1].cast_bool();
-                if left == right {
-                    num += 1
-                };
-            }
-            Some(DataType::NumericType) => {
-                let left = inputs[0].cast_f32();
-                let right = inputs[0].cast_f32();
-                if left == right {
-                    num += 1
-                };
-            }
-            Some(DataType::OneDArrayType) => {
-                let left = inputs[0].cast_1d_array();
-                let right = inputs[0].cast_1d_array();
+            Some(DataType::FP32) => {
+                let left = inputs[0].cast_fp32_array();
+                let right = inputs[1].cast_fp32_array();
                 if left.len() != right.len() {
                     println!("Inputs size not equal!");
-                    return (OpStatus::LaunchFailed, vec![Box::new(Tensor::from(false))]);
+                    return (
+                        Status::LaunchFailed,
+                        vec![Box::new(TensorResult::default())],
+                    );
                 }
-
                 for i in 0..left.len() {
                     if left[i as usize] == right[i as usize] {
                         num += 1;
                     }
                 }
             }
-            Some(DataType::TwoDArrayType) => {}
-            Some(DataType::ThreeDArrayType) => {}
-            _ => {
-                println!("Unknown data type provided!");
-                return (OpStatus::LaunchFailed, vec![Box::new(Tensor::from(false))]);
+            Some(DataType::INT8) => {
+                let left = inputs[0].cast_int8_array();
+                let right = inputs[1].cast_int8_array();
+                if left.len() != right.len() {
+                    println!("Inputs size not equal!");
+                    return (
+                        Status::LaunchFailed,
+                        vec![Box::new(TensorResult::default())],
+                    );
+                }
+                for i in 0..left.len() {
+                    if left[i as usize] == right[i as usize] {
+                        num += 1;
+                    }
+                }
             }
+            _ => {}
         }
 
+        let mut tensor_res = TensorResult::default();
+        tensor_res.data = Some(Tensor::from(num as usize));
         let mut output_vec = Vec::new();
-        output_vec.push(Box::new(Tensor::from(num as usize)));
-        println!("EqualCountOp run success!");
-        (OpStatus::Succeed, output_vec)
+        output_vec.push(Box::new(tensor_res));
+        println!("EqualCount Operator run success!");
+        (Status::Succeed, output_vec)
     }
 }

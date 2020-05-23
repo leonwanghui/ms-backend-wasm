@@ -2,12 +2,27 @@ use std::boxed::Box;
 use std::convert::From;
 
 pub trait Operator {
-    fn init(&mut self, data_type: i32, shape: Vec<usize>, dim_size: usize) -> OpStatus;
+    fn init(
+        &mut self,
+        data_type: DataType,
+        a_shape: (usize, usize, usize),
+        a_dim_size: usize,
+        b_shape: (usize, usize, usize),
+        b_dim_size: usize,
+    ) -> Status;
 
-    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (OpStatus, Vec<Box<Tensor>>);
+    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorResult>>);
 }
 
 #[derive(Debug, PartialEq)]
+pub enum Status {
+    Succeed = 0,
+    ParseFailed,
+    InitFailed,
+    LaunchFailed,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum OpType {
     Add = 0,
     Mul,
@@ -15,67 +30,31 @@ pub enum OpType {
     EqualCount,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum DataType {
-    BooleanType = 0,
-    NumericType,
-    OneDArrayType,
-    TwoDArrayType,
-    ThreeDArrayType,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum OpStatus {
-    Succeed,
-    InitFailed,
-    LaunchFailed,
+    FP32 = 0,
+    INT8,
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Tensor {
     Boolean(bool),
-    Numeric(f32),
-    OneDArray(Vec<f32>),
-    TwoDArray(Vec<Vec<f32>>),
-    ThreeDArray(Vec<Vec<Vec<f32>>>),
-    Default(usize),
+    Numeric(usize),
+    FP32Array(Vec<f32>),
+    INT8Array(Vec<i8>),
 }
 
 impl Tensor {
-    pub fn cast_bool(&self) -> bool {
-        if let Tensor::Boolean(c) = *self {
-            c
-        } else {
-            unreachable!()
-        }
-    }
-
-    pub fn cast_f32(&self) -> f32 {
-        if let Tensor::Numeric(c) = *self {
-            c
-        } else {
-            unreachable!()
-        }
-    }
-
-    pub fn cast_1d_array(&self) -> Vec<f32> {
-        if let Tensor::OneDArray(c) = &*self {
+    pub fn cast_fp32_array(&self) -> Vec<f32> {
+        if let Tensor::FP32Array(c) = &*self {
             c.to_vec()
         } else {
             unreachable!()
         }
     }
 
-    pub fn cast_2d_array(&self) -> Vec<Vec<f32>> {
-        if let Tensor::TwoDArray(c) = &*self {
-            c.to_vec()
-        } else {
-            unreachable!()
-        }
-    }
-
-    pub fn cast_3d_array(&self) -> Vec<Vec<Vec<f32>>> {
-        if let Tensor::ThreeDArray(c) = &*self {
+    pub fn cast_int8_array(&self) -> Vec<i8> {
+        if let Tensor::INT8Array(c) = &*self {
             c.to_vec()
         } else {
             unreachable!()
@@ -89,75 +68,45 @@ impl From<bool> for Tensor {
     }
 }
 
-impl From<f32> for Tensor {
-    fn from(data: f32) -> Self {
+impl From<usize> for Tensor {
+    fn from(data: usize) -> Self {
         Tensor::Numeric(data)
     }
 }
 
 impl From<Vec<f32>> for Tensor {
     fn from(data: Vec<f32>) -> Self {
-        Tensor::OneDArray(data)
+        Tensor::FP32Array(data)
     }
 }
 
-impl From<Vec<Vec<f32>>> for Tensor {
-    fn from(data: Vec<Vec<f32>>) -> Self {
-        Tensor::TwoDArray(data)
+impl From<Vec<i8>> for Tensor {
+    fn from(data: Vec<i8>) -> Self {
+        Tensor::INT8Array(data)
     }
 }
 
-impl From<Vec<Vec<Vec<f32>>>> for Tensor {
-    fn from(data: Vec<Vec<Vec<f32>>>) -> Self {
-        Tensor::ThreeDArray(data)
-    }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TensorResult {
+    pub data: Option<Tensor>,
+    shape: Option<(usize, usize, usize)>,
+    dim_size: usize,
 }
 
-impl From<usize> for Tensor {
-    fn from(data: usize) -> Self {
-        Tensor::Default(data)
+impl TensorResult {
+    pub fn default() -> Self {
+        TensorResult {
+            data: None,
+            shape: None,
+            dim_size: 0,
+        }
+    }
+
+    pub fn new(tensor: Tensor, shape: (usize, usize, usize), dim_size: usize) -> Self {
+        TensorResult {
+            data: Some(tensor),
+            shape: Some(shape),
+            dim_size: dim_size,
+        }
     }
 }
-
-// #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-// pub enum NumberType {
-//     FP32(f32),
-//     INT8(i8),
-//     DEFAULT(usize),
-// }
-
-// impl NumberType {
-//     pub fn cast_f32(&self) -> f32 {
-//         if let NumberType::FP32(c) = *self {
-//             c
-//         } else {
-//             unreachable!()
-//         }
-//     }
-
-//     pub fn cast_i8(&self) -> i8 {
-//         if let NumberType::INT8(c) = *self {
-//             c
-//         } else {
-//             unreachable!()
-//         }
-//     }
-// }
-
-// impl From<f32> for NumberType {
-//     fn from(num: f32) -> Self {
-//         NumberType::FP32(num)
-//     }
-// }
-
-// impl From<i8> for NumberType {
-//     fn from(num: i8) -> Self {
-//         NumberType::INT8(num)
-//     }
-// }
-
-// impl From<usize> for NumberType {
-//     fn from(num: usize) -> Self {
-//         NumberType::DEFAULT(num)
-//     }
-// }

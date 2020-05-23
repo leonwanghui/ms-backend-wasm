@@ -4,68 +4,12 @@ extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 
+mod types;
+use types::*;
+
 use anyhow::Result;
 use wasmtime::*;
 use wasmtime_wasi::{Wasi, WasiCtx};
-
-// #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-// pub enum NumberType {
-//     FP32(f32),
-//     INT8(i8),
-//     DEFAULT(usize),
-// }
-
-// impl From<f32> for NumberType {
-//     fn from(num: f32) -> Self {
-//         NumberType::FP32(num)
-//     }
-// }
-
-// impl From<i8> for NumberType {
-//     fn from(num: i8) -> Self {
-//         NumberType::INT8(num)
-//     }
-// }
-
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum Tensor {
-    Boolean(bool),
-    Numeric(f32),
-    OneDArray(Vec<f32>),
-    TwoDArray(Vec<Vec<f32>>),
-    ThreeDArray(Vec<Vec<Vec<f32>>>),
-    Default(usize),
-}
-
-impl From<bool> for Tensor {
-    fn from(data: bool) -> Self {
-        Tensor::Boolean(data)
-    }
-}
-
-impl From<f32> for Tensor {
-    fn from(data: f32) -> Self {
-        Tensor::Numeric(data)
-    }
-}
-
-impl From<Vec<f32>> for Tensor {
-    fn from(data: Vec<f32>) -> Self {
-        Tensor::OneDArray(data)
-    }
-}
-
-impl From<Vec<Vec<f32>>> for Tensor {
-    fn from(data: Vec<Vec<f32>>) -> Self {
-        Tensor::TwoDArray(data)
-    }
-}
-
-impl From<Vec<Vec<Vec<f32>>>> for Tensor {
-    fn from(data: Vec<Vec<Vec<f32>>>) -> Self {
-        Tensor::ThreeDArray(data)
-    }
-}
 
 fn main() -> Result<()> {
     let store = Store::default();
@@ -83,21 +27,31 @@ fn main() -> Result<()> {
         .ok_or(anyhow::format_err!("failed to find `memory` export"))?;
 
     // Choose op_type to change the operator type with the follow options:
-    //   0: AddOp, 1: MulOp, 2: ArgmaxOp, 3: EqualCountOp, 4..: AddOp
-    let op_type: i32 = 0;
+    //   * OpType::Add
+    //   * OpType::Mul
+    //   * OpType::Argmax
+    //   * OpType::EqualCount
+    let op_type = OpType::Mul;
     // Choose data_type to change the data type with the follow options:
-    //   0: bool, 1: f32, 2: Vec<f32>, 3: Vec<Vec<f32>>, 4..: Vec<Vec<Vec<f32>>>
-    let data_type: i32 = 2;
-    let input_data = vec![
-        Box::new(Tensor::from(vec![1.0f32, 2.0f32, 3.0f32])),
-        Box::new(Tensor::from(vec![4.0f32, 5.0f32, 6.0f32])),
-    ];
-    let dim_size: i32 = 1;
-    let shape_list = (3, 0, 0);
+    //   * DataType::FP32
+    //   * DataType::INT8
+    let data_type = DataType::FP32;
+    // Specify the input data, dimension size and shape of left array.
+    let a_input_data = vec![1.0f32, 2.0f32, 3.0f32];
+    let a_dim_size = 2;
+    let a_shape = (1, 3, 0);
+    // Specify the input data, dimension size and shape of right array.
+    let b_input_data = vec![1.0f32, 5.0f32, 6.0f32];
+    let b_dim_size = 2;
+    let b_shape = (3, 1, 0);
+    // Specify the input address and output address to access the wasm memory.
     let in_addr = 0x1000;
     let out_addr = 0x2000;
 
-    println!("input = {:?}", input_data);
+    let input_data = vec![
+        Box::new(Tensor::from(a_input_data)),
+        Box::new(Tensor::from(b_input_data)),
+    ];
     // Serialize the data into a JSON string.
     let in_data = serde_json::to_vec(&input_data)?;
     let in_size = in_data.len();
@@ -112,25 +66,29 @@ fn main() -> Result<()> {
     let run = instance
         .get_func("run")
         .ok_or(anyhow::format_err!("failed to find `run` function export!"))?
-        .get9::<i32, i32, i32, i32, i32, i32, i32, i32, i32, i32>()?;
+        .get13::<i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32, i32>()?;
 
     let out_size = run(
-        op_type,
-        data_type,
-        dim_size,
-        shape_list.0 as i32,
-        shape_list.1 as i32,
-        shape_list.2 as i32,
+        op_type.clone() as i32,
+        data_type.clone() as i32,
+        a_dim_size as i32,
+        a_shape.0 as i32,
+        a_shape.1 as i32,
+        a_shape.2 as i32,
+        b_dim_size as i32,
+        b_shape.0 as i32,
+        b_shape.1 as i32,
+        b_shape.2 as i32,
         in_addr as i32,
         in_size as i32,
         out_addr as i32,
     )?;
     if out_size == 0 {
-        panic!("Opeartor {} run failed!", op_type);
+        panic!("Opeartor {:?} run failed!", op_type);
     }
 
     let out_data = unsafe { &memory.data_unchecked()[out_addr..][..out_size as usize] };
-    let out_vec: Vec<Box<Tensor>> = serde_json::from_slice(out_data).unwrap();
+    let out_vec: Vec<Box<TensorResult>> = serde_json::from_slice(out_data).unwrap();
     println!("output = {:?}", out_vec);
     Ok(())
 }
