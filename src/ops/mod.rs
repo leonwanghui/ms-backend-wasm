@@ -3,15 +3,12 @@ mod argmax;
 mod equal_count;
 mod mul;
 pub mod types;
-mod utils;
 
 use add::AddOp;
 use argmax::ArgmaxOp;
 use equal_count::EqualCountOp;
 use mul::MulOp;
-use serde_json;
 use std::boxed::Box;
-use std::ptr;
 use types::*;
 
 pub fn operator_instantiate(op_type: usize) -> Box<dyn Operator> {
@@ -39,28 +36,65 @@ pub fn parse_data_type(dtype: usize) -> (Status, DataType) {
     }
 }
 
-pub fn load_inputs(in_addr: i32, in_size: usize) -> Vec<Box<Tensor>> {
-    let in_addr = in_addr as *mut u8;
-
-    let mut data_vec = Vec::new();
-    for i in 0..in_size {
-        data_vec.push(unsafe { ptr::read(in_addr.offset(i as isize)) });
+fn parse_data_shape(shape_vec: Vec<usize>) -> (usize, usize, usize) {
+    match shape_vec.len() {
+        0 => (0, 0, 0),
+        1 => (shape_vec[0], 0, 0),
+        2 => (shape_vec[0], shape_vec[1], 0),
+        _ => (shape_vec[0], shape_vec[1], shape_vec[2]),
     }
-    let inputs: Vec<Box<Tensor>> = serde_json::from_slice(&data_vec).unwrap();
-
-    inputs
 }
 
-pub fn store_outputs(out_addr: i32, outputs: Vec<Box<TensorResult>>) -> usize {
-    let out_addr = out_addr as *mut u8;
+pub fn parse_inputs_shape(
+    inputs: &Vec<TensorInput>,
+) -> ((usize, usize, usize), (usize, usize, usize)) {
+    let a_shape = match &inputs[0].shape {
+        Some(i) => parse_data_shape(i.to_vec()),
+        _ => (0, 0, 0),
+    };
+    let b_shape = if inputs.len() == 2 {
+        let b = match &inputs[1].shape {
+            Some(i) => parse_data_shape(i.to_vec()),
+            _ => (0, 0, 0),
+        };
+        b
+    } else {
+        (0, 0, 0)
+    };
 
-    let data_vec = serde_json::to_vec(&outputs).unwrap();
-    let data_size = data_vec.len();
-    for i in 0..data_size {
-        unsafe {
-            ptr::write(out_addr.offset(i as isize), *data_vec.get(i).unwrap());
+    (a_shape, b_shape)
+}
+
+pub fn parse_inputs_dim_size(inputs: &Vec<TensorInput>) -> (usize, usize) {
+    let a_dim_size = match inputs[0].dim_size {
+        Some(i) => i,
+        _ => 0,
+    };
+    let b_dim_size = if inputs.len() == 2 {
+        let b = match inputs[1].dim_size {
+            Some(i) => i,
+            _ => 0,
+        };
+        b
+    } else {
+        0
+    };
+
+    (a_dim_size, b_dim_size)
+}
+
+pub fn parse_inputs_data(inputs: &Vec<TensorInput>) -> Vec<Box<Tensor>> {
+    let mut inputs_data = Vec::new();
+
+    match &inputs[0].data {
+        Some(i) => inputs_data.push(Box::new(i.clone())),
+        _ => (),
+    }
+    if inputs.len() == 2 {
+        match &inputs[1].data {
+            Some(i) => inputs_data.push(Box::new(i.clone())),
+            _ => (),
         }
     }
-
-    data_size
+    inputs_data
 }

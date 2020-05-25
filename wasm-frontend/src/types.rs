@@ -1,40 +1,4 @@
-use std::boxed::Box;
 use std::convert::From;
-
-pub trait Operator {
-    fn init(
-        &mut self,
-        data_type: DataType,
-        a_shape: (usize, usize, usize),
-        a_dim_size: usize,
-        b_shape: (usize, usize, usize),
-        b_dim_size: usize,
-    ) -> Status;
-
-    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorResult>>);
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Status {
-    Succeed = 0,
-    ParseFailed,
-    InitFailed,
-    LaunchFailed,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum OpType {
-    Add = 0,
-    Mul,
-    Argmax,
-    EqualCount,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum DataType {
-    FP32 = 0,
-    INT8,
-}
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Tensor {

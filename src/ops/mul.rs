@@ -25,31 +25,29 @@ impl MulOp {
         match self.b_dim_size {
             0 => {
                 let result = left_vec[0] * right_vec[0];
-                TensorResult::new(Tensor::from(vec![result]), (0, 0, 0), 0)
+                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             1 => {
                 let left = Array::from(left_vec);
                 let right = Array::from(right_vec);
                 let result = right.dot(&left);
-                TensorResult::new(Tensor::from(vec![result]), (1, 0, 0), 0)
+                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             2 => {
-                let left = unsafe {
-                    Array::from_shape_vec_unchecked(
-                        (self.a_shape.unwrap().0, self.a_shape.unwrap().1),
-                        left_vec.clone(),
-                    )
-                };
-                let right = unsafe {
-                    Array::from_shape_vec_unchecked(
-                        (self.b_shape.unwrap().0, self.b_shape.unwrap().1),
-                        left_vec.clone(),
-                    )
-                };
+                let left = Array::from_shape_vec(
+                    (self.a_shape.unwrap().0, self.a_shape.unwrap().1),
+                    left_vec.clone(),
+                )
+                .unwrap();
+                let right = Array::from_shape_vec(
+                    (self.b_shape.unwrap().0, self.b_shape.unwrap().1),
+                    right_vec.clone(),
+                )
+                .unwrap();
                 let result = right.dot(&left);
                 TensorResult::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
-                    (result.shape()[0], result.shape()[1], 0),
+                    result.shape(),
                     result.ndim(),
                 )
             }
@@ -61,31 +59,29 @@ impl MulOp {
         match self.b_dim_size {
             0 => {
                 let result = left_vec[0] * right_vec[0];
-                TensorResult::new(Tensor::from(vec![result]), (0, 0, 0), 0)
+                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             1 => {
                 let left = Array::from(left_vec);
                 let right = Array::from(right_vec);
                 let result = right.dot(&left);
-                TensorResult::new(Tensor::from(vec![result]), (1, 0, 0), 0)
+                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             2 => {
-                let left = unsafe {
-                    Array::from_shape_vec_unchecked(
-                        (self.a_shape.unwrap().0, self.a_shape.unwrap().1),
-                        left_vec.clone(),
-                    )
-                };
-                let right = unsafe {
-                    Array::from_shape_vec_unchecked(
-                        (self.b_shape.unwrap().0, self.b_shape.unwrap().1),
-                        left_vec.clone(),
-                    )
-                };
+                let left = Array::from_shape_vec(
+                    (self.a_shape.unwrap().0, self.a_shape.unwrap().1),
+                    left_vec.clone(),
+                )
+                .unwrap();
+                let right = Array::from_shape_vec(
+                    (self.b_shape.unwrap().0, self.b_shape.unwrap().1),
+                    right_vec.clone(),
+                )
+                .unwrap();
                 let result = right.dot(&left);
                 TensorResult::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
-                    (result.shape()[0], result.shape()[1], 0),
+                    result.shape(),
                     result.ndim(),
                 )
             }

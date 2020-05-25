@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>osc-serverless</title>
+    <style>
+        body {
+            background: #005ca5;
+            font-family: "Microsoft YaHei" ! important;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        #one {
+            position: absolute;
+            top: 28%;
+            left: 36%;
+        }
+        
+        #osc {
+            position: absolute;
+            top: 15%;
+            left: 39%;
+            font-size: 2.5em;
+        }
+        
+        #left {
+            position: absolute;
+            top: 32%;
+            left: 25%;
+        }
+        
+        #select {
+            position: absolute;
+            top: 32%;
+            left: 36%;
+            width: 8em;
+            height: 2em;
+        }
+        
+        #two {
+            position: absolute;
+            top: 28%;
+            left: 48%;
+        }
+        
+        #input {
+            position: absolute;
+            top: 32%;
+            left: 48%;
+        }
+        
+        #btn {
+            position: absolute;
+            top: 32%;
+            left: 65%;
+            width: 8em;
+            height: 2em;
+        }
+        
+        #output {
+            position: absolute;
+            top: 50%;
+            left: 25%;
+        }
+        
+        #text {
+            position: absolute;
+            top: 50%;
+            left: 36%;
+            width: 28em;
+            height: 13em;
+            border: 1px solid black;
+            word-break: break-all;
+            overflow: auto;
+            background: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <div id="osc">OSC Serverless</div>
+        <div id="one">操作</div>
+        <div id="left">输入</div>
+        <select id="select">
+              <option value="1" selected="selected"></option>
+              <option value="create">create</option>
+              <option value="delete">delete</option>
+          </select>
+        <div id="two">输入数据</div>
+        <input id="input" type="file" placeholder="Select File">
+        <button id="btn">确认</button>
+        <div id="output">输出</div>
+        <div id="text"></div>
+    </div>
+
+    <script src="src/jquery-1.4.4.min.js"></script>
+    <script src="dist/index.js"></script>
+    <script type="text/JavaScript">
+        let op, file; $(document).ready(function(){ $('#select').change(function(){ op = $(this).children('option:selected').val(); }); $('#input').change(function(){ file = $('#input')[0].files[0]; }); $("#btn").click(function(){ alert('请求已发送！'); if(file){ let
+        fr = new FileReader(); fr.onload = function(e) { let data = e.target.result; EntryPoint.load(op, data); }; fr.readAsText(file); }; }); });
+    </script>
+</body>
+
+</html>

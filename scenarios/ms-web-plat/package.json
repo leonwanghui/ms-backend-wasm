@@ -1,0 +1,28 @@
+{
+  "name": "osc-runtime",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "webpack",
+    "serve": "webpack-dev-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leonwanghui/osc-serverless.git"
+  },
+  "keywords": [
+    "wasm",
+    "webpack",
+    "osc",
+    "serverless"
+  ],
+  "author": "Leon Wang <wanghui71leon@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "superagent": "^5.1.0",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.8",
+    "webpack-dev-server": "^3.8.0",
+    "yamljs": "^0.3.0"
+  }
+}

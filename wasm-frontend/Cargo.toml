@@ -1,5 +1,5 @@
 [package]
-name = "ms-frontend-rust"
+name = "wasm-frontend"
 version = "0.1.0"
 authors = ["leonwanghui <wanghui71leon@gmail.com>"]
 edition = "2018"
@@ -14,3 +14,4 @@ anyhow = "1.0.30"
 serde = "1.0.53"
 serde_json = "1.0.53"
 serde_derive = "1.0.53"
+getopts = "0.2.21"

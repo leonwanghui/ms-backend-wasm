@@ -40,5 +40,10 @@ build/
 
 #Added by cargo
 
-**/target
-Cargo.lock
+**/target/
+**/Cargo.lock
+
+# JS workspace
+**/node_modules/
+**/dist/
+**/package-lock.json
