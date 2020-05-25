@@ -1,0 +1,31 @@
+[package]
+name = "wasm-backend-web"
+version = "0.1.0"
+authors = ["leonwanghui <wanghui71leon@gmail.com>"]
+edition = "2018"
+description = "WebAssembly backend to MindSpore deep learning framework in web scenario"
+readme = "README.md"
+repository = "https://github.com/leonwanghui/ms-backend-wasm"
+license = "Apache-2.0"
+keywords = ["wasm", "machine learning", "web"]
+
+[package.metadata]
+wasm-opt = true
+wasm-name-section = false
+wasm-producers-section = false
+
+[profile.release]
+opt-level = 's'
+
+[lib]
+crate-type = ['cdylib']
+
+[dependencies]
+serde = "1.0.53"
+serde_derive = "1.0.53"
+serde_json = "1.0.53"
+ndarray = "0.13.1"
+
+[dependencies.wasm-bindgen]
+version = "0.2.62"
+features = ["serde-serialize"]

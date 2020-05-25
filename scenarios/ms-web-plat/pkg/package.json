@@ -1,0 +1,21 @@
+{
+  "name": "wasm-backend-web",
+  "collaborators": [
+    "leonwanghui <wanghui71leon@gmail.com>"
+  ],
+  "description": "WebAssembly backend to MindSpore deep learning framework in web scenario",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leonwanghui/ms-backend-wasm"
+  },
+  "files": [
+    "wasm_backend_web_bg.wasm",
+    "wasm_backend_web.js",
+    "wasm_backend_web.d.ts"
+  ],
+  "module": "wasm_backend_web.js",
+  "types": "wasm_backend_web.d.ts",
+  "sideEffects": false
+}
