@@ -1,7 +1,7 @@
 const path = require('path');
 
 module.exports = {
-  entry: "./src/osc_runtime_bundler.js",
+  entry: "./src/wasm_frontend_web.js",
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "index.js",

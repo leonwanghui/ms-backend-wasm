@@ -1,28 +1,25 @@
 {
-  "name": "osc-runtime",
+  "name": "wasm-frontend-web",
   "version": "1.0.0",
-  "description": "",
+  "description": "WebAssembly frontend to MindSpore deep learning framework in web scenario",
   "scripts": {
     "build": "webpack",
     "serve": "webpack-dev-server"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/leonwanghui/osc-serverless.git"
+    "url": "git+https://github.com/leonwanghui/ms-backend-wasm.git"
   },
   "keywords": [
     "wasm",
     "webpack",
-    "osc",
-    "serverless"
+    "machine learning"
   ],
   "author": "Leon Wang <wanghui71leon@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "superagent": "^5.1.0",
     "webpack": "^4.39.3",
     "webpack-cli": "^3.3.8",
-    "webpack-dev-server": "^3.8.0",
-    "yamljs": "^0.3.0"
+    "webpack-dev-server": "^3.8.0"
   }
 }

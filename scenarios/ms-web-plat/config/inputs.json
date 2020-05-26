@@ -1,0 +1,11 @@
+[{
+        "input-data": [1, 2, 3, 4],
+        "dim-size": 2,
+        "shape": [2, 2]
+    },
+    {
+        "input-data": [3, 4, 5, 6],
+        "dim-size": 2,
+        "shape": [2, 2]
+    }
+]
