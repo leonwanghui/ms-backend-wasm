@@ -11,7 +11,7 @@ pub trait Operator {
         b_dim_size: usize,
     ) -> Status;
 
-    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorResult>>);
+    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorWrapper>>);
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,7 +103,7 @@ impl From<Vec<i8>> for Tensor {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TensorInput {
+pub struct TensorWrapper {
     #[serde(rename = "input-data", skip_serializing_if = "Option::is_none")]
     pub data: Option<Tensor>,
     #[serde(rename = "shape", skip_serializing_if = "Option::is_none")]
@@ -113,9 +113,9 @@ pub struct TensorInput {
 }
 
 #[allow(dead_code)]
-impl TensorInput {
+impl TensorWrapper {
     pub fn default() -> Self {
-        TensorInput {
+        TensorWrapper {
             data: None,
             shape: None,
             dim_size: None,
@@ -123,44 +123,14 @@ impl TensorInput {
     }
 
     pub fn new(tensor: Tensor, shape: &[usize], dim_size: usize) -> Self {
-        let mut tensor_in = TensorInput::default();
+        let mut tensor_wrap = TensorWrapper::default();
 
-        tensor_in.data = Some(tensor);
+        tensor_wrap.data = Some(tensor);
         if !(shape.is_empty() || dim_size == 0) {
-            tensor_in.shape = Some((*shape).to_vec());
-            tensor_in.dim_size = Some(dim_size);
+            tensor_wrap.shape = Some((*shape).to_vec());
+            tensor_wrap.dim_size = Some(dim_size);
         }
 
-        tensor_in
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TensorResult {
-    pub data: Option<Tensor>,
-    shape: Option<Vec<usize>>,
-    dim_size: Option<usize>,
-}
-
-#[allow(dead_code)]
-impl TensorResult {
-    pub fn default() -> Self {
-        TensorResult {
-            data: None,
-            shape: None,
-            dim_size: None,
-        }
-    }
-
-    pub fn new(tensor: Tensor, shape: &[usize], dim_size: usize) -> Self {
-        let mut tensor_res = TensorResult::default();
-
-        tensor_res.data = Some(tensor);
-        if !(shape.is_empty() || dim_size == 0) {
-            tensor_res.shape = Some((*shape).to_vec());
-            tensor_res.dim_size = Some(dim_size);
-        }
-
-        tensor_res
+        tensor_wrap
     }
 }

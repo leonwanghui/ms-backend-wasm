@@ -1,9 +1,9 @@
 use super::types::*;
 use serde_json::Value;
 
-pub fn value_to_vec_tensor_input(val: Value, data_type: i32) -> Vec<TensorInput> {
+pub fn value_to_vec_tensor_input(val: Value, data_type: i32) -> Vec<TensorWrapper> {
     let val_vec = val.as_array().unwrap();
-    let mut input_data: Vec<TensorInput> = Vec::new();
+    let mut input_data: Vec<TensorWrapper> = Vec::new();
 
     for i in 0..val_vec.len() {
         let data_val = val_vec[i]["input-data"].as_array().unwrap();
@@ -38,7 +38,7 @@ pub fn value_to_vec_tensor_input(val: Value, data_type: i32) -> Vec<TensorInput>
         for i in 0..shape_val.len() {
             shape.push(shape_val[i].as_u64().unwrap() as usize);
         }
-        input_data.push(TensorInput::new(data, &shape, dim_size_val as usize));
+        input_data.push(TensorWrapper::new(data, &shape, dim_size_val as usize));
     }
     input_data
 }

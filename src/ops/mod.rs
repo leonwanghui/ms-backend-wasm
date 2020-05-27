@@ -47,7 +47,7 @@ fn parse_data_shape(shape_vec: Vec<usize>) -> (usize, usize, usize) {
 }
 
 pub fn parse_inputs_shape(
-    inputs: &Vec<TensorInput>,
+    inputs: &Vec<TensorWrapper>,
 ) -> ((usize, usize, usize), (usize, usize, usize)) {
     let a_shape = match &inputs[0].shape {
         Some(i) => parse_data_shape(i.to_vec()),
@@ -66,7 +66,7 @@ pub fn parse_inputs_shape(
     (a_shape, b_shape)
 }
 
-pub fn parse_inputs_dim_size(inputs: &Vec<TensorInput>) -> (usize, usize) {
+pub fn parse_inputs_dim_size(inputs: &Vec<TensorWrapper>) -> (usize, usize) {
     let a_dim_size = match inputs[0].dim_size {
         Some(i) => i,
         _ => 0,
@@ -84,7 +84,7 @@ pub fn parse_inputs_dim_size(inputs: &Vec<TensorInput>) -> (usize, usize) {
     (a_dim_size, b_dim_size)
 }
 
-pub fn parse_inputs_data(inputs: &Vec<TensorInput>) -> Vec<Box<Tensor>> {
+pub fn parse_inputs_data(inputs: &Vec<TensorWrapper>) -> Vec<Box<Tensor>> {
     let mut inputs_data = Vec::new();
 
     match &inputs[0].data {

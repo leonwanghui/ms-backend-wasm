@@ -21,17 +21,17 @@ impl MulOp {
         }
     }
 
-    fn inner_run_fp32(&self, left_vec: Vec<f32>, right_vec: Vec<f32>) -> TensorResult {
+    fn inner_run_fp32(&self, left_vec: Vec<f32>, right_vec: Vec<f32>) -> TensorWrapper {
         match self.b_dim_size {
             0 => {
                 let result = left_vec[0] * right_vec[0];
-                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
+                TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             1 => {
                 let left = Array::from(left_vec);
                 let right = Array::from(right_vec);
                 let result = right.dot(&left);
-                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
+                TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             2 => {
                 let left = Array::from_shape_vec(
@@ -45,27 +45,27 @@ impl MulOp {
                 )
                 .unwrap();
                 let result = right.dot(&left);
-                TensorResult::new(
+                TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
                     result.shape(),
                     result.ndim(),
                 )
             }
-            _ => TensorResult::default(),
+            _ => TensorWrapper::default(),
         }
     }
 
-    fn inner_run_int32(&self, left_vec: Vec<i32>, right_vec: Vec<i32>) -> TensorResult {
+    fn inner_run_int32(&self, left_vec: Vec<i32>, right_vec: Vec<i32>) -> TensorWrapper {
         match self.b_dim_size {
             0 => {
                 let result = left_vec[0] * right_vec[0];
-                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
+                TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             1 => {
                 let left = Array::from(left_vec);
                 let right = Array::from(right_vec);
                 let result = right.dot(&left);
-                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
+                TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             2 => {
                 let left = Array::from_shape_vec(
@@ -79,27 +79,27 @@ impl MulOp {
                 )
                 .unwrap();
                 let result = right.dot(&left);
-                TensorResult::new(
+                TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
                     result.shape(),
                     result.ndim(),
                 )
             }
-            _ => TensorResult::default(),
+            _ => TensorWrapper::default(),
         }
     }
 
-    fn inner_run_int8(&self, left_vec: Vec<i8>, right_vec: Vec<i8>) -> TensorResult {
+    fn inner_run_int8(&self, left_vec: Vec<i8>, right_vec: Vec<i8>) -> TensorWrapper {
         match self.b_dim_size {
             0 => {
                 let result = left_vec[0] * right_vec[0];
-                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
+                TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             1 => {
                 let left = Array::from(left_vec);
                 let right = Array::from(right_vec);
                 let result = right.dot(&left);
-                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
+                TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             2 => {
                 let left = Array::from_shape_vec(
@@ -113,13 +113,13 @@ impl MulOp {
                 )
                 .unwrap();
                 let result = right.dot(&left);
-                TensorResult::new(
+                TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
                     result.shape(),
                     result.ndim(),
                 )
             }
-            _ => TensorResult::default(),
+            _ => TensorWrapper::default(),
         }
     }
 }
@@ -154,12 +154,12 @@ impl Operator for MulOp {
         Status::Succeed
     }
 
-    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorResult>>) {
+    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorWrapper>>) {
         if inputs.len() != 2 {
             println!("Inputs vector length should be 2!");
             return (
                 Status::LaunchFailed,
-                vec![Box::new(TensorResult::default())],
+                vec![Box::new(TensorWrapper::default())],
             );
         }
 
@@ -180,7 +180,7 @@ impl Operator for MulOp {
                 let right_vec = inputs[1].cast_int8_array();
                 self.inner_run_int8(left_vec, right_vec)
             }
-            _ => TensorResult::default(),
+            _ => TensorWrapper::default(),
         };
         output_vec.push(Box::new(result));
 

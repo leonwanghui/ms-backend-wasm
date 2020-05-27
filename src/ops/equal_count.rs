@@ -42,12 +42,12 @@ impl Operator for EqualCountOp {
         Status::Succeed
     }
 
-    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorResult>>) {
+    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorWrapper>>) {
         if inputs.len() != 2 {
             println!("Inputs vector length should be 2!");
             return (
                 Status::LaunchFailed,
-                vec![Box::new(TensorResult::default())],
+                vec![Box::new(TensorWrapper::default())],
             );
         }
 
@@ -60,7 +60,7 @@ impl Operator for EqualCountOp {
                     println!("Inputs size not equal!");
                     return (
                         Status::LaunchFailed,
-                        vec![Box::new(TensorResult::default())],
+                        vec![Box::new(TensorWrapper::default())],
                     );
                 }
                 for i in 0..left.len() {
@@ -76,7 +76,7 @@ impl Operator for EqualCountOp {
                     println!("Inputs size not equal!");
                     return (
                         Status::LaunchFailed,
-                        vec![Box::new(TensorResult::default())],
+                        vec![Box::new(TensorWrapper::default())],
                     );
                 }
                 for i in 0..left.len() {
@@ -92,7 +92,7 @@ impl Operator for EqualCountOp {
                     println!("Inputs size not equal!");
                     return (
                         Status::LaunchFailed,
-                        vec![Box::new(TensorResult::default())],
+                        vec![Box::new(TensorWrapper::default())],
                     );
                 }
                 for i in 0..left.len() {
@@ -104,7 +104,7 @@ impl Operator for EqualCountOp {
             _ => {}
         }
 
-        let mut tensor_res = TensorResult::default();
+        let mut tensor_res = TensorWrapper::default();
         tensor_res.data = Some(Tensor::from(num as usize));
         let mut output_vec = Vec::new();
         output_vec.push(Box::new(tensor_res));

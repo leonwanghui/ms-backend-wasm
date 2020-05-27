@@ -16,8 +16,8 @@ impl ArgmaxOp {
         }
     }
 
-    fn inner_run_fp32(&self, input_vec: Vec<f32>) -> TensorResult {
-        let mut tensor_res = TensorResult::default();
+    fn inner_run_fp32(&self, input_vec: Vec<f32>) -> TensorWrapper {
+        let mut tensor_res = TensorWrapper::default();
 
         if self.dim_size == 1 {
             let mut index = 0;
@@ -34,8 +34,8 @@ impl ArgmaxOp {
         tensor_res
     }
 
-    fn inner_run_int32(&self, input_vec: Vec<i32>) -> TensorResult {
-        let mut tensor_res = TensorResult::default();
+    fn inner_run_int32(&self, input_vec: Vec<i32>) -> TensorWrapper {
+        let mut tensor_res = TensorWrapper::default();
 
         if self.dim_size == 1 {
             let mut index = 0;
@@ -52,8 +52,8 @@ impl ArgmaxOp {
         tensor_res
     }
 
-    fn inner_run_int8(&self, input_vec: Vec<i8>) -> TensorResult {
-        let mut tensor_res = TensorResult::default();
+    fn inner_run_int8(&self, input_vec: Vec<i8>) -> TensorWrapper {
+        let mut tensor_res = TensorWrapper::default();
 
         if self.dim_size == 1 {
             let mut index = 0;
@@ -88,12 +88,12 @@ impl Operator for ArgmaxOp {
         Status::Succeed
     }
 
-    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorResult>>) {
+    fn launch(&self, inputs: Vec<Box<Tensor>>) -> (Status, Vec<Box<TensorWrapper>>) {
         if inputs.len() == 0 {
             println!("Inputs vector length should not be zero!");
             return (
                 Status::LaunchFailed,
-                vec![Box::new(TensorResult::default())],
+                vec![Box::new(TensorWrapper::default())],
             );
         }
 
@@ -111,7 +111,7 @@ impl Operator for ArgmaxOp {
                 let input_vec = inputs[0].cast_int8_array();
                 self.inner_run_int8(input_vec)
             }
-            _ => TensorResult::default(),
+            _ => TensorWrapper::default(),
         };
         output_vec.push(Box::new(result));
 

@@ -99,7 +99,7 @@ fn main() {
     let input_data_val: Value = serde_json::from_str(&input_data_str).unwrap();
     let input_data = utils::value_to_vec_tensor_input(input_data_val, data_type);
 
-    let tensor: TensorResult = match execute(wasm_backend_file, op_type, data_type, input_data) {
+    let tensor: TensorWrapper = match execute(wasm_backend_file, op_type, data_type, input_data) {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };
@@ -110,8 +110,8 @@ fn execute(
     wasm_backend_file: String,
     op_type: i32,
     data_type: i32,
-    input_data: Vec<TensorInput>,
-) -> Result<TensorResult> {
+    input_data: Vec<TensorWrapper>,
+) -> Result<TensorWrapper> {
     let store = Store::default();
 
     // First set up our linker which is going to be linking modules together. We
@@ -158,6 +158,6 @@ fn execute(
     }
 
     let out_data = unsafe { &memory.data_unchecked()[out_addr..][..out_size as usize] };
-    let out_vec: Vec<TensorResult> = serde_json::from_slice(out_data).unwrap();
+    let out_vec: Vec<TensorWrapper> = serde_json::from_slice(out_data).unwrap();
     Ok(out_vec[0].clone())
 }

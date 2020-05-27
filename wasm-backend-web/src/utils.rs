@@ -3,10 +3,10 @@ use serde_json;
 use serde_json::Value;
 use wasm_bindgen::JsValue;
 
-pub fn decode_inputs(val_str: String, data_type: i32) -> Vec<TensorInput> {
+pub fn decode_inputs(val_str: String, data_type: i32) -> Vec<TensorWrapper> {
     let val: Value = serde_json::from_str(&val_str).unwrap();
     let val_vec = val.as_array().unwrap();
-    let mut input_data: Vec<TensorInput> = Vec::new();
+    let mut input_data: Vec<TensorWrapper> = Vec::new();
 
     for i in 0..val_vec.len() {
         let data_val = val_vec[i]["input-data"].as_array().unwrap();
@@ -41,11 +41,11 @@ pub fn decode_inputs(val_str: String, data_type: i32) -> Vec<TensorInput> {
         for i in 0..shape_val.len() {
             shape.push(shape_val[i].as_u64().unwrap() as usize);
         }
-        input_data.push(TensorInput::new(data, &shape, dim_size_val as usize));
+        input_data.push(TensorWrapper::new(data, &shape, dim_size_val as usize));
     }
     input_data
 }
 
-pub fn encode_outputs(outputs: Vec<Box<TensorResult>>) -> JsValue {
+pub fn encode_outputs(outputs: Vec<Box<TensorWrapper>>) -> JsValue {
     JsValue::from_serde(&outputs[0]).unwrap()
 }
