@@ -17,6 +17,14 @@ pub fn value_to_vec_tensor_input(val: Value, data_type: i32) -> Vec<TensorInput>
                 data_vec.push(data_val[i].as_f64().unwrap() as f32);
             }
             Tensor::from(data_vec)
+        } else if data_type == 1
+        /* If data type is INT32 */
+        {
+            let mut data_vec: Vec<i32> = Vec::new();
+            for i in 0..data_val.len() {
+                data_vec.push(data_val[i].as_i64().unwrap() as i32);
+            }
+            Tensor::from(data_vec)
         } else
         /* If data type is INT8 */
         {

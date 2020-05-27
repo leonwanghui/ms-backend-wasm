@@ -1,6 +1,6 @@
 use super::ops::types::*;
-use serde_json::Value;
 use serde_json;
+use serde_json::Value;
 use wasm_bindgen::JsValue;
 
 pub fn decode_inputs(val_str: String, data_type: i32) -> Vec<TensorInput> {
@@ -18,6 +18,14 @@ pub fn decode_inputs(val_str: String, data_type: i32) -> Vec<TensorInput> {
             let mut data_vec: Vec<f32> = Vec::new();
             for i in 0..data_val.len() {
                 data_vec.push(data_val[i].as_f64().unwrap() as f32);
+            }
+            Tensor::from(data_vec)
+        } else if data_type == 1
+        /* If data type is INT32 */
+        {
+            let mut data_vec: Vec<i32> = Vec::new();
+            for i in 0..data_val.len() {
+                data_vec.push(data_val[i].as_i64().unwrap() as i32);
             }
             Tensor::from(data_vec)
         } else

@@ -39,12 +39,12 @@ WASM could also bring innovation to AI technologies like [Federated Learning](ht
 
 This project should be considered **experimental** at the very early stage, all rich features are under active development. Here is the current operator support matrix:
 
-| Operator Name | Introduced | FP32 | INT8 |
-| ------------- | ---------- | ---- | -----|
-| Add | `v0.0.1` | ✔️ | ✔️ |
-| Mul | `v0.0.1` | ✔️ | ✔️ |
-| Argmax | `v0.0.1` | ✔️ | ✔️ |
-| EqualCount | `v0.0.1` | ✔️ | ✔️ |
+| Operator Name | Introduced | FP32 | INT32 | INT8 |
+| ------------- | ---------- | ---- | ----- | ---- |
+| Add | `v0.0.1` | ✔️ | ✔️ | ✔️ |
+| Mul | `v0.0.1` | ✔️ | ✔️ | ✔️ |
+| Argmax | `v0.0.1` | ✔️ | ✔️ | ✔️ |
+| EqualCount | `v0.0.1` | ✔️ | ✔️ | ✔️ |
 
 **NOTICE**: Currently this project is ONLY tested on Ubuntu system, so `Ubuntu 16.04+` should be prepared as the testing environment.
 
@@ -88,7 +88,7 @@ Options:
     -o, --op-type VALUE set the operator type, ONLY supports Add, Mul, Argmax
                         and EqualCount, default: Add.
     -d, --data-type VALUE
-                        set the data type, ONLY supports FP32 and INT8,
+                        set the data type, ONLY supports FP32, INT32 and INT8,
                         default: FP32.
     -I, --input VALUE   set the input data
     -i, --input-data-file FILE_PATH

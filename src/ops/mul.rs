@@ -55,6 +55,40 @@ impl MulOp {
         }
     }
 
+    fn inner_run_int32(&self, left_vec: Vec<i32>, right_vec: Vec<i32>) -> TensorResult {
+        match self.b_dim_size {
+            0 => {
+                let result = left_vec[0] * right_vec[0];
+                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
+            }
+            1 => {
+                let left = Array::from(left_vec);
+                let right = Array::from(right_vec);
+                let result = right.dot(&left);
+                TensorResult::new(Tensor::from(vec![result]), &Vec::new(), 0)
+            }
+            2 => {
+                let left = Array::from_shape_vec(
+                    (self.a_shape.unwrap().0, self.a_shape.unwrap().1),
+                    left_vec.clone(),
+                )
+                .unwrap();
+                let right = Array::from_shape_vec(
+                    (self.b_shape.unwrap().0, self.b_shape.unwrap().1),
+                    right_vec.clone(),
+                )
+                .unwrap();
+                let result = right.dot(&left);
+                TensorResult::new(
+                    Tensor::from(result.as_slice().unwrap().to_vec()),
+                    result.shape(),
+                    result.ndim(),
+                )
+            }
+            _ => TensorResult::default(),
+        }
+    }
+
     fn inner_run_int8(&self, left_vec: Vec<i8>, right_vec: Vec<i8>) -> TensorResult {
         match self.b_dim_size {
             0 => {
@@ -135,6 +169,11 @@ impl Operator for MulOp {
                 let left_vec = inputs[0].cast_fp32_array();
                 let right_vec = inputs[1].cast_fp32_array();
                 self.inner_run_fp32(left_vec, right_vec)
+            }
+            Some(DataType::INT32) => {
+                let left_vec = inputs[0].cast_int32_array();
+                let right_vec = inputs[1].cast_int32_array();
+                self.inner_run_int32(left_vec, right_vec)
             }
             Some(DataType::INT8) => {
                 let left_vec = inputs[0].cast_int8_array();

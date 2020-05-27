@@ -33,6 +33,7 @@ pub enum OpType {
 #[derive(Debug, PartialEq, Clone)]
 pub enum DataType {
     FP32 = 0,
+    INT32,
     INT8,
 }
 
@@ -41,12 +42,21 @@ pub enum Tensor {
     Boolean(bool),
     Numeric(usize),
     FP32Array(Vec<f32>),
+    INT32Array(Vec<i32>),
     INT8Array(Vec<i8>),
 }
 
 impl Tensor {
     pub fn cast_fp32_array(&self) -> Vec<f32> {
         if let Tensor::FP32Array(c) = &*self {
+            c.to_vec()
+        } else {
+            unreachable!()
+        }
+    }
+
+    pub fn cast_int32_array(&self) -> Vec<i32> {
+        if let Tensor::INT32Array(c) = &*self {
             c.to_vec()
         } else {
             unreachable!()
@@ -77,6 +87,12 @@ impl From<usize> for Tensor {
 impl From<Vec<f32>> for Tensor {
     fn from(data: Vec<f32>) -> Self {
         Tensor::FP32Array(data)
+    }
+}
+
+impl From<Vec<i32>> for Tensor {
+    fn from(data: Vec<i32>) -> Self {
+        Tensor::INT32Array(data)
     }
 }
 

@@ -1,7 +1,7 @@
+use super::ops::types::*;
 use serde_json;
 use std::boxed::Box;
 use std::ptr;
-use super::ops::types::*;
 
 pub fn load_inputs(in_addr: i32, in_size: usize) -> Vec<TensorInput> {
     let in_addr = in_addr as *mut u8;

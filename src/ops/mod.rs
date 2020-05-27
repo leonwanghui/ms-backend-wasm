@@ -28,7 +28,8 @@ pub fn operator_instantiate(op_type: usize) -> Box<dyn Operator> {
 pub fn parse_data_type(dtype: usize) -> (Status, DataType) {
     match dtype {
         0 => (Status::Succeed, DataType::FP32),
-        1 => (Status::Succeed, DataType::INT8),
+        1 => (Status::Succeed, DataType::INT32),
+        2 => (Status::Succeed, DataType::INT8),
         _ => {
             println!("Unknown data type provided!");
             (Status::ParseFailed, DataType::FP32)

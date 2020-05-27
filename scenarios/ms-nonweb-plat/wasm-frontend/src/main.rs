@@ -41,7 +41,7 @@ fn main() {
     opts.optopt(
         "d",
         "data-type",
-        "set the data type, ONLY supports FP32 and INT8, default: FP32.",
+        "set the data type, ONLY supports FP32, INT32 and INT8, default: FP32.",
         "VALUE",
     );
     opts.optopt("I", "input", "set the input data", "VALUE");
@@ -76,7 +76,8 @@ fn main() {
     };
     let data_type: i32 = match data_type_str.as_str() {
         "FP32" => 0,
-        "INT8" => 1,
+        "INT32" => 1,
+        "INT8" => 2,
         _ => 0,
     };
     let input_data_str: String = match matches.opt_str("I") {
@@ -98,8 +99,7 @@ fn main() {
     let input_data_val: Value = serde_json::from_str(&input_data_str).unwrap();
     let input_data = utils::value_to_vec_tensor_input(input_data_val, data_type);
 
-    let tensor: TensorResult = match execute(wasm_backend_file, op_type, data_type, input_data)
-    {
+    let tensor: TensorResult = match execute(wasm_backend_file, op_type, data_type, input_data) {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };

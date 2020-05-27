@@ -69,6 +69,22 @@ impl Operator for EqualCountOp {
                     }
                 }
             }
+            Some(DataType::INT32) => {
+                let left = inputs[0].cast_int32_array();
+                let right = inputs[1].cast_int32_array();
+                if left.len() != right.len() {
+                    println!("Inputs size not equal!");
+                    return (
+                        Status::LaunchFailed,
+                        vec![Box::new(TensorResult::default())],
+                    );
+                }
+                for i in 0..left.len() {
+                    if left[i as usize] == right[i as usize] {
+                        num += 1;
+                    }
+                }
+            }
             Some(DataType::INT8) => {
                 let left = inputs[0].cast_int8_array();
                 let right = inputs[1].cast_int8_array();

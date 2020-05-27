@@ -34,6 +34,24 @@ impl ArgmaxOp {
         tensor_res
     }
 
+    fn inner_run_int32(&self, input_vec: Vec<i32>) -> TensorResult {
+        let mut tensor_res = TensorResult::default();
+
+        if self.dim_size == 1 {
+            let mut index = 0;
+            let mut max_arg = input_vec[0];
+
+            for i in 0..input_vec.len() {
+                if input_vec[i] > max_arg {
+                    max_arg = input_vec[i];
+                    index = i;
+                }
+            }
+            tensor_res.data = Some(Tensor::from(vec![max_arg, index as i32]));
+        }
+        tensor_res
+    }
+
     fn inner_run_int8(&self, input_vec: Vec<i8>) -> TensorResult {
         let mut tensor_res = TensorResult::default();
 
@@ -84,6 +102,10 @@ impl Operator for ArgmaxOp {
             Some(DataType::FP32) => {
                 let input_vec = inputs[0].cast_fp32_array();
                 self.inner_run_fp32(input_vec)
+            }
+            Some(DataType::INT32) => {
+                let input_vec = inputs[0].cast_int32_array();
+                self.inner_run_int32(input_vec)
             }
             Some(DataType::INT8) => {
                 let input_vec = inputs[0].cast_int8_array();
