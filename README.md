@@ -1,27 +1,28 @@
-# ms-backend-wasm
+# MindSpore WebAssembly Backend
 
 [![Releases](https://img.shields.io/github/release/leonwanghui/ms-backend-wasm/all.svg?style=flat-square)](https://github.com/leonwanghui/ms-backend-wasm/releases)
 [![LICENSE](https://img.shields.io/github/license/leonwanghui/osc-serverless.svg?style=flat-square)](https://github.com/leonwanghui/ms-backend-wasm/blob/master/LICENSE)
 
-#### Experimental notice: This project is still *experimental* and only serves as a proof of concept for running MindSpore on WebAssembly runtime.
+#### Experimental notice: This project is still *experimental* and only serves as a proof of concept for running [MindSpore](https://github.com/mindspore-ai/mindspore) on WebAssembly runtime.
 
-- [ms-backend-wasm](#ms-backend-wasm)
+- [MindSpore WebAssembly Backend](#mindspore-webassembly-backend)
     - [Background](#background)
-        - [TensorFlow WebAssembly support](#tensorflow-webassembly-support)
         - [WebAssembly and WASI introduction](#webassembly-and-wasi-introduction)
-        - [Bringing new AI with WASI](#bring-ai-with-wasi)
-    - [Project status](#project-status)
+        - [New ML framework backend with WASI](#new-ml-framework-backend-with-wasi)
+        - [Case study - TensorFlow WebAssembly support](#case-study---tensorflow-webassembly-support)
+    - [Project Status](#project-status)
     - [Use cases](#use-cases)
         - [Web scenarios](#web-scenarios)
         - [Non-web scenarios](#non-web-scenarios)
+    - [Future Work](#future-work)
+        - [TVM runtime support](#tvm-runtime-support)
+        - [TOPI WASM build](#topi-wasm-build)
+        - [MindSpore frontend integration](#mindSpore-frontend-integration)
+        - [Wasmtime interface types support](#wasmtime-interface-types-support)
     - [Appendix](#appendix)
-        - [Install system packages](#install-system-packages)
+        - [System packages install](#system-packages-install)
 
 ## Background
-
-### TensorFlow WebAssembly support
-
-TensorFlow community recently released a [blogpost](https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html) on Mar 11th that TF can now support a [WebAssembly](https://webassembly.org/) (WASM) backend for TensorFlow.js. TensorFlow WASM backend provide a new choice for the user to directly run inference on mobile CPU. It also provides a good combination of performance enhancement and portability. The execution speed is 2–10 times faster than javascript and the support for mobile is better than WebGL. In light of the recent development of [SIMD support](https://github.com/WebAssembly/simd) in WASM community, the inference performance could be further enhanced.
 
 ### WebAssembly and WASI introduction
 
@@ -29,13 +30,17 @@ TensorFlow community recently released a [blogpost](https://blog.tensorflow.org/
 
 [WASI](http://wasi.dev/) is a modular system interface for WebAssembly. As described in this [blogpost](https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/), WebAssembly is an assembly language for a conceptual machine, so it needs a system interface for a conceptual operating system, not any single operating system. This way, it can be run across all different OSs.
 
-### Bringing new AI with WASI
+### New ML framework backend with WASI
 
 We believe that with more maturity at WASI, it is possible that we could have a general backend operator library that could work across all scenarios (Cloud/Edge/Mobile). Together with a WASM port of [MindSpore](https://www.mindspore.cn/), our newly open sourced all scenario deep learning framework, WASI could enable a new backend-agnostic, highly secure and performant stack that help user and developers alike to be able to develop new AI applications with better portability.
 
 WASM could also bring innovation to AI technologies like [Federated Learning](https://en.wikipedia.org/wiki/Federated_learning). Unlike the conventional container based deployment for federated learning applications, WASM based solution could bring good isolation, small memory consumption and therefore making the MPC more efficient and secure.
 
-## Project status
+### Case study - TensorFlow WebAssembly support
+
+TensorFlow community recently released a [blogpost](https://blog.tensorflow.org/2020/03/introducing-webassembly-backend-for-tensorflow-js.html) on Mar 11th that TF can now support a [WebAssembly](https://webassembly.org/) (WASM) backend for TensorFlow.js. TensorFlow WASM backend provides a new choice for the user to directly run inference on mobile CPU. It also provides a good combination of performance enhancement and portability. The execution speed is 2–10 times faster than javascript and the support for mobile is better than WebGL. In light of the recent development of [SIMD support](https://github.com/WebAssembly/simd) in WASM community, the inference performance could be further enhanced.
+
+## Project Status
 
 This project should be considered **experimental** at the very early stage, all rich features are under active development. Here is the current operator support matrix:
 
@@ -52,7 +57,7 @@ This project should be considered **experimental** at the very early stage, all 
 
 ### Web scenarios
 
-If you want to utilize the `ms-backend-wasm` package in web browser, please make sure [`Node.js`](#install-system-packages) has been installed.
+If you want to utilize the `ms-backend-wasm` package in web browser, please make sure [`Node.js`](#system-packages-install) has been installed.
 
 Next run the command below to install the package (`npm` REQUIRED):
 
@@ -66,7 +71,7 @@ Then open the browser and login to `http://{ your_host_ip }:8088` to access the 
 
 ### Non-web scenarios
 
-Before running `ms-backend-wasm` package in non-web scenarios, please make sure [`Rust`](#install-system-packages) has been installed.
+Before running `ms-backend-wasm` package in non-web scenarios, please make sure [`Rust`](#system-packages-install) has been installed.
 
 Next run the command below to install the package (`rust` REQUIRED):
 
@@ -96,9 +101,31 @@ Options:
     -h, --help          print this help menu
 ```
 
+## Future Work
+
+### TVM runtime support
+
+Currently the operator libs is `handwriting-only`, which is not flexible enough to scale out and not efficient to be executed. Therefore, we are working on adding [TVM runtime](https://github.com/apache/incubator-tvm) support in the short term.
+
+<img src="https://github.com/dmlc/web-data/raw/master/tvm/tutorial/tvm_support_list.png" alt="TVM hardware support" width="600"/>
+
+As demonstrated in TVM runtime [tutorials](https://tvm.apache.org/docs/tutorials/relay_quick_start.html), TVM already supports WASM as the optional hardware backend, so we can leverage the features of WebAssembly (portability, security) and TVM runtime (domain-specific, optimization) to build a flexible and auto-optimized backend for MindSpore.
+
+### TOPI WASM build
+
+[TOPI](https://github.com/apache/incubator-tvm/tree/master/topi) (TVM Operator Inventory) provides numpy-style generic operations and schedules with higher abstractions than TVM, so it's highly required to add the topi package compilation with WASM backend support in TVM community.
+
+### MindSpore frontend integration
+
+Although it is ONLY a PoC on running MindSpore on WebAssembly runtime, we will drive fast iteration to release the integration to MindSpore frontend in later versions.
+
+### Wasmtime interface types support
+
+With the latest stable version (`v0.16.0`), support for interface types has temporarily removed from Wasmtime. So currently working with WebAssembly modules means it can only deal with integers and floats, and more rich types (like byte arrays, strings, structure, etc.) are not supported. For more information see https://github.com/bytecodealliance/wasmtime/issues/677.
+
 ## Appendix
 
-### Install system packages
+### System packages install
 
 * Rust (latest version)
 
