@@ -76,7 +76,7 @@ Before running `ms-backend-wasm` package in non-web scenarios, please make sure 
 Next run the command below to install the package (`rust` REQUIRED):
 
 ```shell
-cd scenarios/ms-nonweb-plat/wasm-frontend/ && cargo run build --release
+cd scenarios/ms-nonweb-plat/wasm-frontend/ && cargo build --release
 cp ./target/release/wasm-frontend /usr/local/bin/
 ```
 
