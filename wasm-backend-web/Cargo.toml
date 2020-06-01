@@ -15,6 +15,7 @@ wasm-name-section = false
 wasm-producers-section = false
 
 [profile.release]
+lto = true
 opt-level = 's'
 
 [lib]

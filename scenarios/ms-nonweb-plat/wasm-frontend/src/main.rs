@@ -117,6 +117,9 @@ fn execute(
     // First set up our linker which is going to be linking modules together. We
     // want our linker to have wasi available, so we set that up here as well.
     let mut linker = Linker::new(&store);
+    // Create an instance of `Wasi` which contains a `WasiCtx`. Note that
+    // `WasiCtx` provides a number of ways to configure what the target program
+    // will have access to.
     let wasi = Wasi::new(&store, WasiCtx::new(std::env::args())?);
     wasi.add_to_linker(&mut linker)?;
 
