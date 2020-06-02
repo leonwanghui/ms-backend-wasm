@@ -1,3 +1,6 @@
 [submodule "third_party/wasmtime"]
     path = third_party/wasmtime
     url = https://github.com/bytecodealliance/wasmtime.git
+[submodule "third_party/tvm"]
+    path = third_party/tvm
+    url = https://github.com/apache/incubator-tvm.git
