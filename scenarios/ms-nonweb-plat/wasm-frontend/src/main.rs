@@ -123,7 +123,7 @@ fn execute(
     let wasi = Wasi::new(&store, WasiCtx::new(std::env::args())?);
     wasi.add_to_linker(&mut linker)?;
 
-    let module = Module::from_file(&store, &wasm_backend_file)?;
+    let module = Module::from_file(store.engine(), &wasm_backend_file)?;
     let instance = linker.instantiate(&module)?;
     let memory = instance
         .get_memory("memory")
