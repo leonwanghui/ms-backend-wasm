@@ -26,7 +26,7 @@
 
 ### WebAssembly and WASI introduction
 
-[WebAssembly](https://webassembly.org/) was proposed to help address the javascript code execution performance problem. WASM has now became a widely used and de-facto runtime standard in web development, especially for mobile applications.
+[WebAssembly](https://webassembly.org/) was proposed to help address the javascript code execution performance problem. WASM has now became a widely used and de-facto runtime standard in web development.
 
 [WASI](http://wasi.dev/) is a modular system interface for WebAssembly. As described in this [blogpost](https://hacks.mozilla.org/2019/03/standardizing-wasi-a-webassembly-system-interface/), WebAssembly is an assembly language for a conceptual machine, so it needs a system interface for a conceptual operating system, not any single operating system. This way, it can be run across all different OSs.
 
