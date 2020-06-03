@@ -4,9 +4,9 @@ use std::boxed::Box;
 
 pub struct MulOp {
     data_type: Option<DataType>,
-    a_shape: Option<(usize, usize, usize)>,
+    a_shape: Vec<usize>,
     a_dim_size: usize,
-    b_shape: Option<(usize, usize, usize)>,
+    b_shape: Vec<usize>,
     b_dim_size: usize,
 }
 
@@ -14,9 +14,9 @@ impl MulOp {
     pub fn new() -> MulOp {
         MulOp {
             data_type: None,
-            a_shape: None,
+            a_shape: Vec::new(),
             a_dim_size: 0,
-            b_shape: None,
+            b_shape: Vec::new(),
             b_dim_size: 0,
         }
     }
@@ -34,16 +34,12 @@ impl MulOp {
                 TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             2 => {
-                let left = Array::from_shape_vec(
-                    (self.a_shape.unwrap().0, self.a_shape.unwrap().1),
-                    left_vec.clone(),
-                )
-                .unwrap();
-                let right = Array::from_shape_vec(
-                    (self.b_shape.unwrap().0, self.b_shape.unwrap().1),
-                    right_vec.clone(),
-                )
-                .unwrap();
+                let left =
+                    Array::from_shape_vec((self.a_shape[0], self.a_shape[1]), left_vec.clone())
+                        .unwrap();
+                let right =
+                    Array::from_shape_vec((self.a_shape[0], self.a_shape[1]), right_vec.clone())
+                        .unwrap();
                 let result = right.dot(&left);
                 TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
@@ -68,16 +64,12 @@ impl MulOp {
                 TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             2 => {
-                let left = Array::from_shape_vec(
-                    (self.a_shape.unwrap().0, self.a_shape.unwrap().1),
-                    left_vec.clone(),
-                )
-                .unwrap();
-                let right = Array::from_shape_vec(
-                    (self.b_shape.unwrap().0, self.b_shape.unwrap().1),
-                    right_vec.clone(),
-                )
-                .unwrap();
+                let left =
+                    Array::from_shape_vec((self.a_shape[0], self.a_shape[1]), left_vec.clone())
+                        .unwrap();
+                let right =
+                    Array::from_shape_vec((self.a_shape[0], self.a_shape[1]), right_vec.clone())
+                        .unwrap();
                 let result = right.dot(&left);
                 TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
@@ -102,16 +94,12 @@ impl MulOp {
                 TensorWrapper::new(Tensor::from(vec![result]), &Vec::new(), 0)
             }
             2 => {
-                let left = Array::from_shape_vec(
-                    (self.a_shape.unwrap().0, self.a_shape.unwrap().1),
-                    left_vec.clone(),
-                )
-                .unwrap();
-                let right = Array::from_shape_vec(
-                    (self.b_shape.unwrap().0, self.b_shape.unwrap().1),
-                    right_vec.clone(),
-                )
-                .unwrap();
+                let left =
+                    Array::from_shape_vec((self.a_shape[0], self.a_shape[1]), left_vec.clone())
+                        .unwrap();
+                let right =
+                    Array::from_shape_vec((self.a_shape[0], self.a_shape[1]), right_vec.clone())
+                        .unwrap();
                 let result = right.dot(&left);
                 TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
@@ -128,27 +116,27 @@ impl Operator for MulOp {
     fn init(
         &mut self,
         data_type: DataType,
-        a_shape: (usize, usize, usize),
+        a_shape: Vec<usize>,
         a_dim_size: usize,
-        b_shape: (usize, usize, usize),
+        b_shape: Vec<usize>,
         b_dim_size: usize,
     ) -> Status {
         if b_dim_size == 1 {
-            if a_shape.0 != b_shape.0 {
+            if a_shape[0] != b_shape[0] {
                 println!("Inputs of 1D array must be same length for Mul operator!");
                 return Status::InitFailed;
             }
         } else if b_dim_size == 2 {
-            if a_shape.1 != b_shape.0 {
+            if a_shape[1] != b_shape[0] {
                 println!("Inputs of 2D array must be the shape of MxN and NxK for Mul operator!");
                 return Status::InitFailed;
             }
         }
 
         self.data_type = Some(data_type);
-        self.a_shape = Some(a_shape);
+        self.a_shape = a_shape;
         self.a_dim_size = a_dim_size;
-        self.b_shape = Some(b_shape);
+        self.b_shape = b_shape;
         self.b_dim_size = b_dim_size;
         println!("Mul operator init success!");
         Status::Succeed

@@ -37,41 +37,30 @@ pub fn parse_data_type(dtype: usize) -> (Status, DataType) {
     }
 }
 
-fn parse_data_shape(shape_vec: Vec<usize>) -> (usize, usize, usize) {
-    match shape_vec.len() {
-        0 => (0, 0, 0),
-        1 => (shape_vec[0], 0, 0),
-        2 => (shape_vec[0], shape_vec[1], 0),
-        _ => (shape_vec[0], shape_vec[1], shape_vec[2]),
-    }
-}
-
-pub fn parse_inputs_shape(
-    inputs: &Vec<TensorWrapper>,
-) -> ((usize, usize, usize), (usize, usize, usize)) {
-    let a_shape = match &inputs[0].shape {
-        Some(i) => parse_data_shape(i.to_vec()),
-        _ => (0, 0, 0),
+pub fn parse_inputs_shape(inputs: &Vec<TensorWrapper>) -> (Vec<usize>, Vec<usize>) {
+    let a_shape: Vec<usize> = match &inputs[0].shape {
+        Some(i) => i.to_vec(),
+        _ => Vec::new(),
     };
-    let b_shape = if inputs.len() == 2 {
-        let b = match &inputs[1].shape {
-            Some(i) => parse_data_shape(i.to_vec()),
-            _ => (0, 0, 0),
+    let b_shape: Vec<usize> = if inputs.len() == 2 {
+        let b: Vec<usize> = match &inputs[1].shape {
+            Some(i) => i.to_vec(),
+            _ => Vec::new(),
         };
         b
     } else {
-        (0, 0, 0)
+        Vec::new()
     };
 
     (a_shape, b_shape)
 }
 
 pub fn parse_inputs_dim_size(inputs: &Vec<TensorWrapper>) -> (usize, usize) {
-    let a_dim_size = match inputs[0].dim_size {
+    let a_dim_size: usize = match inputs[0].dim_size {
         Some(i) => i,
         _ => 0,
     };
-    let b_dim_size = if inputs.len() == 2 {
+    let b_dim_size: usize = if inputs.len() == 2 {
         let b = match inputs[1].dim_size {
             Some(i) => i,
             _ => 0,

@@ -4,7 +4,7 @@ use std::boxed::Box;
 
 pub struct AddOp {
     data_type: Option<DataType>,
-    shape: Option<(usize, usize, usize)>,
+    shape: Vec<usize>,
     dim_size: usize,
 }
 
@@ -12,7 +12,7 @@ impl AddOp {
     pub fn new() -> AddOp {
         AddOp {
             data_type: None,
-            shape: None,
+            shape: Vec::new(),
             dim_size: 0,
         }
     }
@@ -30,16 +30,11 @@ impl AddOp {
                 TensorWrapper::new(Tensor::from(result.to_vec()), result.shape(), result.ndim())
             }
             2 => {
-                let left = Array::from_shape_vec(
-                    (self.shape.unwrap().0, self.shape.unwrap().1),
-                    left_vec.clone(),
-                )
-                .unwrap();
-                let right = Array::from_shape_vec(
-                    (self.shape.unwrap().0, self.shape.unwrap().1),
-                    right_vec.clone(),
-                )
-                .unwrap();
+                let left = Array::from_shape_vec((self.shape[0], self.shape[1]), left_vec.clone())
+                    .unwrap();
+                let right =
+                    Array::from_shape_vec((self.shape[0], self.shape[1]), right_vec.clone())
+                        .unwrap();
                 let result = &left + &right;
                 TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
@@ -49,20 +44,12 @@ impl AddOp {
             }
             3 => {
                 let left = Array::from_shape_vec(
-                    (
-                        self.shape.unwrap().0,
-                        self.shape.unwrap().1,
-                        self.shape.unwrap().2,
-                    ),
+                    (self.shape[0], self.shape[1], self.shape[2]),
                     left_vec.clone(),
                 )
                 .unwrap();
                 let right = Array::from_shape_vec(
-                    (
-                        self.shape.unwrap().0,
-                        self.shape.unwrap().1,
-                        self.shape.unwrap().2,
-                    ),
+                    (self.shape[0], self.shape[1], self.shape[2]),
                     right_vec.clone(),
                 )
                 .unwrap();
@@ -90,16 +77,11 @@ impl AddOp {
                 TensorWrapper::new(Tensor::from(result.to_vec()), result.shape(), result.ndim())
             }
             2 => {
-                let left = Array::from_shape_vec(
-                    (self.shape.unwrap().0, self.shape.unwrap().1),
-                    left_vec.clone(),
-                )
-                .unwrap();
-                let right = Array::from_shape_vec(
-                    (self.shape.unwrap().0, self.shape.unwrap().1),
-                    right_vec.clone(),
-                )
-                .unwrap();
+                let left = Array::from_shape_vec((self.shape[0], self.shape[1]), left_vec.clone())
+                    .unwrap();
+                let right =
+                    Array::from_shape_vec((self.shape[0], self.shape[1]), right_vec.clone())
+                        .unwrap();
                 let result = &left + &right;
                 TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
@@ -109,20 +91,12 @@ impl AddOp {
             }
             3 => {
                 let left = Array::from_shape_vec(
-                    (
-                        self.shape.unwrap().0,
-                        self.shape.unwrap().1,
-                        self.shape.unwrap().2,
-                    ),
+                    (self.shape[0], self.shape[1], self.shape[2]),
                     left_vec.clone(),
                 )
                 .unwrap();
                 let right = Array::from_shape_vec(
-                    (
-                        self.shape.unwrap().0,
-                        self.shape.unwrap().1,
-                        self.shape.unwrap().2,
-                    ),
+                    (self.shape[0], self.shape[1], self.shape[2]),
                     right_vec.clone(),
                 )
                 .unwrap();
@@ -150,16 +124,11 @@ impl AddOp {
                 TensorWrapper::new(Tensor::from(result.to_vec()), result.shape(), result.ndim())
             }
             2 => {
-                let left = Array::from_shape_vec(
-                    (self.shape.unwrap().0, self.shape.unwrap().1),
-                    left_vec.clone(),
-                )
-                .unwrap();
-                let right = Array::from_shape_vec(
-                    (self.shape.unwrap().0, self.shape.unwrap().1),
-                    right_vec.clone(),
-                )
-                .unwrap();
+                let left = Array::from_shape_vec((self.shape[0], self.shape[1]), left_vec.clone())
+                    .unwrap();
+                let right =
+                    Array::from_shape_vec((self.shape[0], self.shape[1]), right_vec.clone())
+                        .unwrap();
                 let result = &left + &right;
                 TensorWrapper::new(
                     Tensor::from(result.as_slice().unwrap().to_vec()),
@@ -169,20 +138,12 @@ impl AddOp {
             }
             3 => {
                 let left = Array::from_shape_vec(
-                    (
-                        self.shape.unwrap().0,
-                        self.shape.unwrap().1,
-                        self.shape.unwrap().2,
-                    ),
+                    (self.shape[0], self.shape[1], self.shape[2]),
                     left_vec.clone(),
                 )
                 .unwrap();
                 let right = Array::from_shape_vec(
-                    (
-                        self.shape.unwrap().0,
-                        self.shape.unwrap().1,
-                        self.shape.unwrap().2,
-                    ),
+                    (self.shape[0], self.shape[1], self.shape[2]),
                     right_vec.clone(),
                 )
                 .unwrap();
@@ -202,22 +163,18 @@ impl Operator for AddOp {
     fn init(
         &mut self,
         data_type: DataType,
-        a_shape: (usize, usize, usize),
+        a_shape: Vec<usize>,
         a_dim_size: usize,
-        b_shape: (usize, usize, usize),
+        b_shape: Vec<usize>,
         b_dim_size: usize,
     ) -> Status {
-        if a_dim_size != b_dim_size
-            || a_shape.0 != b_shape.0
-            || a_shape.1 != b_shape.1
-            || a_shape.2 != b_shape.2
-        {
+        if a_dim_size != b_dim_size || a_shape.len() != b_shape.len() {
             println!("Both dimension size and shape for Add operator should be equal!");
             return Status::InitFailed;
         }
 
         self.data_type = Some(data_type);
-        self.shape = Some(a_shape);
+        self.shape = a_shape;
         self.dim_size = a_dim_size;
         println!("Add operator init success!");
         Status::Succeed

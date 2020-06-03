@@ -5,9 +5,9 @@ pub trait Operator {
     fn init(
         &mut self,
         data_type: DataType,
-        a_shape: (usize, usize, usize),
+        a_shape: Vec<usize>,
         a_dim_size: usize,
-        b_shape: (usize, usize, usize),
+        b_shape: Vec<usize>,
         b_dim_size: usize,
     ) -> Status;
 
@@ -114,14 +114,6 @@ pub struct TensorWrapper {
 
 #[allow(dead_code)]
 impl TensorWrapper {
-    pub fn default() -> Self {
-        TensorWrapper {
-            data: None,
-            shape: None,
-            dim_size: None,
-        }
-    }
-
     pub fn new(tensor: Tensor, shape: &[usize], dim_size: usize) -> Self {
         let mut tensor_wrap = TensorWrapper::default();
 
@@ -132,5 +124,15 @@ impl TensorWrapper {
         }
 
         tensor_wrap
+    }
+}
+
+impl Default for TensorWrapper {
+    fn default() -> Self {
+        TensorWrapper {
+            data: None,
+            shape: None,
+            dim_size: None,
+        }
     }
 }

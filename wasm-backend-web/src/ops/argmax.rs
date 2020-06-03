@@ -3,7 +3,7 @@ use std::boxed::Box;
 
 pub struct ArgmaxOp {
     data_type: Option<DataType>,
-    shape: Option<(usize, usize, usize)>,
+    shape: Vec<usize>,
     dim_size: usize,
 }
 
@@ -11,7 +11,7 @@ impl ArgmaxOp {
     pub fn new() -> ArgmaxOp {
         ArgmaxOp {
             data_type: None,
-            shape: None,
+            shape: Vec::new(),
             dim_size: 0,
         }
     }
@@ -76,13 +76,13 @@ impl Operator for ArgmaxOp {
     fn init(
         &mut self,
         data_type: DataType,
-        a_shape: (usize, usize, usize),
+        a_shape: Vec<usize>,
         a_dim_size: usize,
-        b_shape: (usize, usize, usize),
+        b_shape: Vec<usize>,
         b_dim_size: usize,
     ) -> Status {
         self.data_type = Some(data_type);
-        self.shape = Some(a_shape);
+        self.shape = a_shape;
         self.dim_size = a_dim_size;
         println!("Argmax operator init success!");
         Status::Succeed

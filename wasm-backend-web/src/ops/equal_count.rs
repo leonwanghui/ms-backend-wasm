@@ -3,7 +3,7 @@ use std::boxed::Box;
 
 pub struct EqualCountOp {
     data_type: Option<DataType>,
-    shape: Option<(usize, usize, usize)>,
+    shape: Vec<usize>,
     dim_size: usize,
 }
 
@@ -11,7 +11,7 @@ impl EqualCountOp {
     pub fn new() -> EqualCountOp {
         EqualCountOp {
             data_type: None,
-            shape: None,
+            shape: Vec::new(),
             dim_size: 0,
         }
     }
@@ -21,22 +21,18 @@ impl Operator for EqualCountOp {
     fn init(
         &mut self,
         data_type: DataType,
-        a_shape: (usize, usize, usize),
+        a_shape: Vec<usize>,
         a_dim_size: usize,
-        b_shape: (usize, usize, usize),
+        b_shape: Vec<usize>,
         b_dim_size: usize,
     ) -> Status {
-        if a_dim_size != b_dim_size
-            || a_shape.0 != b_shape.0
-            || a_shape.1 != b_shape.1
-            || a_shape.2 != b_shape.2
-        {
+        if a_dim_size != b_dim_size || a_shape.len() != b_shape.len() {
             println!("Both dimension and shape for EqualCount operator should be equal!");
             return Status::InitFailed;
         }
 
         self.data_type = Some(data_type);
-        self.shape = Some(a_shape);
+        self.shape = a_shape;
         self.dim_size = a_dim_size;
         println!("EqualCount operator init success!");
         Status::Succeed

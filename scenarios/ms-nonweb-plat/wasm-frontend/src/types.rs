@@ -77,14 +77,6 @@ pub struct TensorWrapper {
 
 #[allow(dead_code)]
 impl TensorWrapper {
-    pub fn default() -> Self {
-        TensorWrapper {
-            data: None,
-            shape: None,
-            dim_size: None,
-        }
-    }
-
     pub fn new(tensor: Tensor, shape: &[usize], dim_size: usize) -> Self {
         let mut tensor_wrap = TensorWrapper::default();
 
@@ -95,5 +87,15 @@ impl TensorWrapper {
         }
 
         tensor_wrap
+    }
+}
+
+impl Default for TensorWrapper {
+    fn default() -> Self {
+        TensorWrapper {
+            data: None,
+            shape: None,
+            dim_size: None,
+        }
     }
 }
