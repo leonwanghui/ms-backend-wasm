@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-"""Prepares a simple TVM library for testing."""
+"""Prepares a simple TVM library for add operator."""
 
 from os import path as osp
 import sys
@@ -24,7 +24,8 @@ import sys
 import tvm
 from tvm import te
 
-def main():
+
+def add():
     n = te.var('n')
     A = te.placeholder((n,), name='A')
     B = te.placeholder((n,), name='B')
@@ -32,7 +33,9 @@ def main():
     s = tvm.te.create_schedule(C.op)
     s[C].parallel(s[C].op.axis[0])
     print(tvm.lower(s, [A, B, C], simple_mode=True))
-    tvm.build(s, [A, B, C], 'llvm -target=wasm32-unknown-unknown --system-lib').save(osp.join(sys.argv[1], 'test.o'))
+    tvm.build(s, [A, B, C], 'llvm -target=wasm32-unknown-unknown --system-lib',
+              name='add').save(osp.join(sys.argv[1], 'add.o'))
+
 
 if __name__ == '__main__':
-    main()
+    add()

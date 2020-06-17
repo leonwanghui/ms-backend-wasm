@@ -7,17 +7,6 @@ pub mod ops;
 use ops::types::Status;
 mod utils;
 
-extern "C" {
-    static __tvm_module_ctx: i32;
-}
-
-#[no_mangle]
-unsafe fn __get_tvm_module_ctx() -> i32 {
-    // Refer a symbol in the libtest_wasm32.a to make sure that the link of the
-    // library is not optimized out.
-    __tvm_module_ctx
-}
-
 #[no_mangle]
 pub extern "C" fn run(op_type: i32, in_addr: i32, in_size: i32, out_addr: i32) -> i32 {
     let inputs = utils::load_inputs(in_addr, in_size as usize);

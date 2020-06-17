@@ -1,6 +1,18 @@
 use super::types::*;
 use tvm_runtime::{Module as _, SystemLibModule};
 
+extern "C" {
+    static __tvm_module_ctx: i32;
+    fn __wasm_call_ctors();
+}
+
+#[no_mangle]
+unsafe fn __get_tvm_module_ctx() -> i32 {
+    // Refer a symbol in the libops_wasm32.a to make sure that the link of the
+    // library is not optimized out.
+    __tvm_module_ctx
+}
+
 pub struct TVMAddOp {
     data_type: Option<DataType>,
     shape: Vec<usize>,
@@ -44,10 +56,13 @@ impl Operator for TVMAddOp {
             return Status::LaunchFailed;
         }
 
+        unsafe {
+            // This is necessary to invoke TVMBackendRegisterSystemLibSymbol
+            // API calls.
+            __wasm_call_ctors();
+        }
         let syslib = SystemLibModule::default();
-        let add = syslib
-            .get_function("default_function")
-            .expect("main function not found");
+        let add = syslib.get_function("add").expect("add function not found!");
         call_packed!(add, inputs[0], inputs[1], output).unwrap();
 
         println!("TVM Add operator run success!");
