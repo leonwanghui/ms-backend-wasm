@@ -17,14 +17,14 @@ fn main() {
     .expect("Failed to execute command!");
 
     let ar = option_env!("LLVM_AR").unwrap_or("llvm-ar-10");
-    let obj_file = out_dir.join("add.o");
-    let obj2_file = out_dir.join("div.o");
+    let add_obj_file = out_dir.join("add.o");
+    let sub_obj_file = out_dir.join("sub.o");
     let lib_file = out_dir.join("libops_wasm32.a");
     Command::new(ar)
         .arg("rcs")
         .arg(&lib_file)
-        .arg(&obj_file)
-        .arg(&obj2_file)
+        .arg(&add_obj_file)
+        .arg(&sub_obj_file)
         .output()
         .expect("Failed to execute command!");
 

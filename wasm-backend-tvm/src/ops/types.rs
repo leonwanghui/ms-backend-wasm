@@ -25,14 +25,14 @@ pub enum Status {
 #[derive(Debug, PartialEq, Clone)]
 pub enum OpType {
     Add,
-    Div,
+    Sub,
 }
 
 impl From<i32> for OpType {
     fn from(op_type: i32) -> Self {
         match op_type {
             0i32 => OpType::Add,
-            1i32 => OpType::Div,
+            1i32 => OpType::Sub,
             _ => OpType::Add,
         }
     }

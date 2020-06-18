@@ -5,13 +5,13 @@ extern "C" {
     fn __wasm_call_ctors();
 }
 
-pub struct TVMDivOp {
+pub struct TVMSubOp {
     data_type: Option<DataType>,
     shape: Vec<usize>,
     dim_size: usize,
 }
 
-impl TVMDivOp {
+impl TVMSubOp {
     pub fn new() -> Self {
         Self {
             data_type: None,
@@ -21,7 +21,7 @@ impl TVMDivOp {
     }
 }
 
-impl Operator for TVMDivOp {
+impl Operator for TVMSubOp {
     fn init(&mut self, data_type: DataType, a_shape: Vec<usize>, b_shape: Vec<usize>) -> Status {
         if a_shape.len() != b_shape.len()
             && a_shape
@@ -31,14 +31,14 @@ impl Operator for TVMDivOp {
                 .count()
                 != a_shape.len()
         {
-            println!("Both dimension size and shape for Div operator should be equal!");
+            println!("Both dimension size and shape for Sub operator should be equal!");
             return Status::InitFailed;
         }
 
         self.data_type = Some(data_type);
         self.dim_size = a_shape.len();
         self.shape = a_shape;
-        println!("TVM Div operator init success!");
+        println!("TVM Sub operator init success!");
         Status::Succeed
     }
 
@@ -56,10 +56,10 @@ impl Operator for TVMDivOp {
             __wasm_call_ctors();
         }
         let syslib = SystemLibModule::default();
-        let div = syslib.get_function("div").expect("add function not found!");
+        let div = syslib.get_function("sub").expect("sub function not found!");
         call_packed!(div, l_tensor, r_tensor, output).unwrap();
 
-        println!("TVM Div operator run success!");
+        println!("TVM Sub operator run success!");
         Status::Succeed
     }
 }

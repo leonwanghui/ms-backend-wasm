@@ -1,7 +1,7 @@
 mod add;
 use add::TVMAddOp;
-mod div;
-use div::TVMDivOp;
+mod sub;
+use sub::TVMSubOp;
 pub mod types;
 use types::*;
 
@@ -10,7 +10,7 @@ use std::boxed::Box;
 pub fn operator_instantiate(op_type: i32) -> Box<dyn Operator> {
     match OpType::from(op_type) {
         OpType::Add => Box::new(TVMAddOp::new()),
-        OpType::Div => Box::new(TVMDivOp::new()),
+        OpType::Sub => Box::new(TVMSubOp::new()),
     }
 }
 

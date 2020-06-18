@@ -35,7 +35,7 @@ fn main() {
     opts.optopt(
         "o",
         "op-type",
-        "set the operator type, ONLY supports Add and Div, default: Add.",
+        "set the operator type, currently ONLY support Add and Sub, default: Add.",
         "VALUE",
     );
 
@@ -60,7 +60,7 @@ fn main() {
     };
     let op_type: i32 = match op_type_str.as_str() {
         "Add" => 0,
-        "Div" => 1,
+        "Sub" => 1,
         _ => 0,
     };
     // let input_data_str: String = match matches.opt_str("I") {
