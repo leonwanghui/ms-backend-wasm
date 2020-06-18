@@ -42,13 +42,14 @@ impl Operator for TVMAddOp {
         Status::Succeed
     }
 
-    fn launch(&self, inputs: Vec<DLTensor>, output: &mut DLTensor) -> Status {
+    fn launch(&self, inputs: Vec<Tensor>, output: Tensor) -> (Status, Tensor) {
         if inputs.len() != 2 {
             println!("Inputs tensor length should be 2!");
-            return Status::LaunchFailed;
+            return (Status::LaunchFailed, Tensor::default());
         }
-        let l_tensor = inputs.get(0).unwrap();
-        let r_tensor = inputs.get(1).unwrap();
+        let mut l_tensor = inputs.get(0).unwrap().as_dltensor();
+        let mut r_tensor = inputs.get(1).unwrap().as_dltensor();
+        let mut out_tensor = output.as_dltensor();
 
         unsafe {
             // This is necessary to invoke TVMBackendRegisterSystemLibSymbol
@@ -57,9 +58,10 @@ impl Operator for TVMAddOp {
         }
         let syslib = SystemLibModule::default();
         let add = syslib.get_function("add").expect("add function not found!");
-        call_packed!(add, l_tensor, r_tensor, output).unwrap();
+        call_packed!(add, &mut l_tensor, &mut r_tensor, &mut out_tensor).unwrap();
 
+        let output: Tensor = out_tensor.into();
         println!("TVM Add operator run success!");
-        Status::Succeed
+        (Status::Succeed, output)
     }
 }

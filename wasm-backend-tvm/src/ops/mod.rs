@@ -36,13 +36,13 @@ pub fn parse_inputs_shape(inputs: &Vec<Tensor>) -> (Vec<usize>, Vec<usize>) {
     }
 }
 
-pub fn parse_inputs_tensor(inputs: &Vec<Tensor>) -> (Vec<DLTensor>, DLTensor) {
+pub fn parse_inputs_tensor(inputs: &Vec<Tensor>) -> (Vec<Tensor>, Tensor) {
     if inputs.len() == 3 {
         (
-            vec![inputs[0].as_dltensor(), inputs[1].as_dltensor()],
-            inputs[2].as_dltensor(),
+            vec![inputs[0].clone(), inputs[1].clone()],
+            inputs[2].clone(),
         )
     } else {
-        (vec![inputs[0].as_dltensor()], inputs[1].as_dltensor())
+        (vec![inputs[0].clone()], inputs[1].clone())
     }
 }

@@ -14,11 +14,10 @@ pub fn load_inputs(in_addr: i32, in_size: usize) -> Vec<Tensor> {
     inputs
 }
 
-pub fn store_outputs(out_addr: i32, outputs: DLTensor) -> usize {
+pub fn store_output(out_addr: i32, output: Tensor) -> usize {
     let out_addr = out_addr as *mut u8;
 
-    let result: Tensor = outputs.into();
-    let data_vec = serde_json::to_vec(&result).unwrap();
+    let data_vec = serde_json::to_vec(&output).unwrap();
     let data_size = data_vec.len();
     for i in 0..data_size {
         unsafe {

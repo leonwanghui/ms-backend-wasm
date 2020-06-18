@@ -11,7 +11,7 @@ use tvm_common::ffi::{
 pub trait Operator {
     fn init(&mut self, dtype: DataType, a_shape: Vec<usize>, b_shape: Vec<usize>) -> Status;
 
-    fn launch(&self, inputs: Vec<DLTensor>, output: &mut DLTensor) -> Status;
+    fn launch(&self, inputs: Vec<Tensor>, output: Tensor) -> (Status, Tensor);
 }
 
 #[derive(Debug, PartialEq)]
@@ -117,26 +117,6 @@ impl Tensor {
     }
 
     pub fn as_dltensor(&self) -> DLTensor {
-        // let data = unsafe {
-        //     match self.dtype() {
-        //         DataType::INT32 => slice::from_raw_parts_mut(
-        //             self.data().as_mut_ptr() as *mut i32,
-        //             self.data().len() / mem::size_of::<i32>(),
-        //         )
-        //         .as_mut_ptr() as *mut c_void,
-        //         DataType::INT8 => slice::from_raw_parts_mut(
-        //             self.data().as_mut_ptr() as *mut i8,
-        //             self.data().len() / mem::size_of::<i8>(),
-        //         )
-        //         .as_mut_ptr() as *mut c_void,
-        //         DataType::FP32 => slice::from_raw_parts_mut(
-        //             self.data().as_mut_ptr() as *mut f32,
-        //             self.data().len() / mem::size_of::<f32>(),
-        //         )
-        //         .as_mut_ptr() as *mut c_void,
-        //     }
-        // };
-
         DLTensor {
             data: self.data().as_mut_ptr() as *mut c_void,
             ctx: DLContext {
