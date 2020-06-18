@@ -14,25 +14,23 @@ pub fn operator_instantiate(op_type: i32) -> Box<dyn Operator> {
     }
 }
 
-pub fn parse_inputs_dtype(inputs: &Vec<Tensor>) -> (Status, DataType) {
-    if inputs.len() == 3
-        && (inputs[0].dtype() != inputs[1].dtype() || inputs[0].dtype() != inputs[2].dtype())
+pub fn validate_inputs(inputs: &Vec<Tensor>) -> Status {
+    if (inputs.len() == 3
+        && !(inputs[0].dtype() == inputs[1].dtype() && inputs[0].dtype() == inputs[2].dtype()))
+        || (inputs.len() == 2 && inputs[0].dtype() != inputs[1].dtype())
     {
-        println!("The dtype of inputs is not equal!");
-        (Status::ParseFailed, DataType::FP32)
-    } else if inputs.len() == 2 && inputs[0].dtype() != inputs[1].dtype() {
         println!("The dtype of inputs and outputs is not equal!");
-        (Status::ParseFailed, DataType::FP32)
+        Status::ValidateFailed
     } else {
-        (Status::Succeed, inputs[0].dtype())
+        Status::Succeed
     }
 }
 
-pub fn parse_inputs_shape(inputs: &Vec<Tensor>) -> (Vec<usize>, Vec<usize>) {
+pub fn parse_inputs_shape(inputs: &Vec<Tensor>) -> (Vec<usize>, Vec<usize>, Vec<usize>) {
     if inputs.len() == 3 {
-        (inputs[0].shape(), inputs[1].shape())
+        (inputs[0].shape(), inputs[1].shape(), inputs[2].shape())
     } else {
-        (inputs[0].shape(), Vec::new())
+        (inputs[0].shape(), inputs[1].shape(), Vec::new())
     }
 }
 

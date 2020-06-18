@@ -10,18 +10,17 @@ mod utils;
 #[no_mangle]
 pub extern "C" fn run(op_type: i32, in_addr: i32, in_size: i32, out_addr: i32) -> i32 {
     let inputs = utils::load_inputs(in_addr, in_size as usize);
-    let (stat, dtype) = ops::parse_inputs_dtype(&inputs);
-    if stat != Status::Succeed {
+    if ops::validate_inputs(&inputs) != Status::Succeed {
+        return 0i32;
+    }
+
+    let op_instance = ops::operator_instantiate(op_type);
+    let (a_shape, b_shape, c_shape) = ops::parse_inputs_shape(&inputs);
+    if op_instance.init(a_shape, b_shape, c_shape) != Status::Succeed {
         return 0i32;
     };
-    let (a_shape, b_shape) = ops::parse_inputs_shape(&inputs);
+
     let (in_tensors, out_tensor) = ops::parse_inputs_tensor(&inputs);
-
-    let mut op_instance = ops::operator_instantiate(op_type);
-    if op_instance.init(dtype, a_shape, b_shape) != Status::Succeed {
-        return 0i32;
-    };
-
     let (stat, output) = op_instance.launch(in_tensors, out_tensor);
     if stat != Status::Succeed {
         return 0i32;

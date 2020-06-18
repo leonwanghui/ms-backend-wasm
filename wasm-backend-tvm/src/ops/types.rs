@@ -9,7 +9,7 @@ use tvm_common::ffi::{
 };
 
 pub trait Operator {
-    fn init(&mut self, dtype: DataType, a_shape: Vec<usize>, b_shape: Vec<usize>) -> Status;
+    fn init(&self, a_shape: Vec<usize>, b_shape: Vec<usize>, c_shape: Vec<usize>) -> Status;
 
     fn launch(&self, inputs: Vec<Tensor>, output: Tensor) -> (Status, Tensor);
 }
@@ -17,7 +17,7 @@ pub trait Operator {
 #[derive(Debug, PartialEq)]
 pub enum Status {
     Succeed,
-    ParseFailed,
+    ValidateFailed,
     InitFailed,
     LaunchFailed,
 }
