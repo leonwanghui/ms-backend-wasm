@@ -35,7 +35,7 @@ fn main() {
     opts.optopt(
         "o",
         "op-type",
-        "set the operator type, ONLY supports Add, default: Add.",
+        "set the operator type, ONLY supports Add and Div, default: Add.",
         "VALUE",
     );
 
@@ -60,6 +60,7 @@ fn main() {
     };
     let op_type: i32 = match op_type_str.as_str() {
         "Add" => 0,
+        "Div" => 1,
         _ => 0,
     };
     // let input_data_str: String = match matches.opt_str("I") {
@@ -81,7 +82,7 @@ fn main() {
     // let input_data_val: Value = serde_json::from_str(&input_data_str).unwrap();
     // let input_data = utils::value_to_vec_tensor_input(input_data_val, data_type);
     let a = Array::from_vec(vec![1f32, 2., 3., 4.]);
-    let b = Array::from_vec(vec![1f32, 0., 1., 0.]);
+    let b = Array::from_vec(vec![1f32; 4]);
     let c = Array::from_vec(vec![0f32; 4]);
     let a_tensor: Tensor = a.into();
     let b_tensor: Tensor = b.into();
@@ -147,6 +148,6 @@ fn execute(wasm_backend_file: String, op_type: i32, input_data: Vec<Tensor>) -> 
     }
 
     let out_data = unsafe { &memory.data_unchecked()[out_addr..][..out_size as usize] };
-    let out_vec: Vec<Tensor> = serde_json::from_slice(out_data).unwrap();
-    Ok(out_vec[0].clone())
+    let out_vec: Tensor = serde_json::from_slice(out_data).unwrap();
+    Ok(out_vec.clone())
 }

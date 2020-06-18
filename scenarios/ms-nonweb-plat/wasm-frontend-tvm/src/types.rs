@@ -2,7 +2,7 @@ use std::{convert::From, mem, slice};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum DataType {
-    FP32 = 0,
+    FP32,
     INT32,
     INT8,
 }
@@ -15,6 +15,7 @@ pub struct Tensor {
     pub(crate) data: Vec<u8>,
 }
 
+#[allow(dead_code)]
 impl Tensor {
     pub fn new(dtype: DataType, shape: Vec<usize>, strides: Vec<usize>, data: Vec<u8>) -> Self {
         Tensor {

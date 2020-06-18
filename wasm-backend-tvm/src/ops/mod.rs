@@ -1,5 +1,7 @@
 mod add;
 use add::TVMAddOp;
+mod div;
+use div::TVMDivOp;
 pub mod types;
 use types::*;
 
@@ -8,6 +10,7 @@ use std::boxed::Box;
 pub fn operator_instantiate(op_type: i32) -> Box<dyn Operator> {
     match OpType::from(op_type) {
         OpType::Add => Box::new(TVMAddOp::new()),
+        OpType::Div => Box::new(TVMDivOp::new()),
     }
 }
 
@@ -33,19 +36,13 @@ pub fn parse_inputs_shape(inputs: &Vec<Tensor>) -> (Vec<usize>, Vec<usize>) {
     }
 }
 
-pub fn parse_inputs_tensor(inputs: &Vec<Tensor>) -> (Vec<*mut DLTensor>, *mut DLTensor) {
+pub fn parse_inputs_tensor(inputs: &Vec<Tensor>) -> (Vec<DLTensor>, DLTensor) {
     if inputs.len() == 3 {
         (
-            vec![
-                Box::into_raw(Box::from(inputs[0].as_dltensor())),
-                Box::into_raw(Box::from(inputs[1].as_dltensor())),
-            ],
-            Box::into_raw(Box::from(inputs[2].as_dltensor())),
+            vec![inputs[0].as_dltensor(), inputs[1].as_dltensor()],
+            inputs[2].as_dltensor(),
         )
     } else {
-        (
-            vec![Box::into_raw(Box::from(inputs[0].as_dltensor()))],
-            Box::into_raw(Box::from(inputs[1].as_dltensor())),
-        )
+        (vec![inputs[0].as_dltensor()], inputs[1].as_dltensor())
     }
 }

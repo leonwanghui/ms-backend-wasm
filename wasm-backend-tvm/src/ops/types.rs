@@ -1,6 +1,5 @@
 use std::{
     convert::From,
-    mem,
     os::raw::{c_int, c_void},
     slice,
 };
@@ -12,7 +11,7 @@ use tvm_common::ffi::{
 pub trait Operator {
     fn init(&mut self, dtype: DataType, a_shape: Vec<usize>, b_shape: Vec<usize>) -> Status;
 
-    fn launch(&self, inputs: Vec<*mut DLTensor>, output: *mut DLTensor) -> Status;
+    fn launch(&self, inputs: Vec<DLTensor>, output: &mut DLTensor) -> Status;
 }
 
 #[derive(Debug, PartialEq)]
@@ -26,12 +25,14 @@ pub enum Status {
 #[derive(Debug, PartialEq, Clone)]
 pub enum OpType {
     Add,
+    Div,
 }
 
 impl From<i32> for OpType {
     fn from(op_type: i32) -> Self {
         match op_type {
             0i32 => OpType::Add,
+            1i32 => OpType::Div,
             _ => OpType::Add,
         }
     }
@@ -48,18 +49,18 @@ impl DataType {
     pub fn as_dldtype(&self) -> DLDataType {
         match self {
             DataType::INT32 => DLDataType {
-                bits: DLDataTypeCode_kDLInt as u8,
-                code: 32u8,
+                code: DLDataTypeCode_kDLInt as u8,
+                bits: 32u8,
                 lanes: 1u16,
             },
             DataType::INT8 => DLDataType {
-                bits: DLDataTypeCode_kDLInt as u8,
-                code: 8u8,
+                code: DLDataTypeCode_kDLInt as u8,
+                bits: 8u8,
                 lanes: 1u16,
             },
             DataType::FP32 => DLDataType {
-                bits: DLDataTypeCode_kDLFloat as u8,
-                code: 32u8,
+                code: DLDataTypeCode_kDLFloat as u8,
+                bits: 32u8,
                 lanes: 1u16,
             },
         }
@@ -88,6 +89,7 @@ pub struct Tensor {
     pub(crate) data: Vec<u8>,
 }
 
+#[allow(dead_code)]
 impl Tensor {
     pub fn new(dtype: DataType, shape: Vec<usize>, strides: Vec<usize>, data: Vec<u8>) -> Self {
         Tensor {
@@ -115,36 +117,37 @@ impl Tensor {
     }
 
     pub fn as_dltensor(&self) -> DLTensor {
-        let data = unsafe {
-            match self.dtype() {
-                DataType::INT32 => slice::from_raw_parts_mut(
-                    self.data().as_mut_ptr() as *mut i32,
-                    self.data().len() / mem::size_of::<i32>(),
-                )
-                .as_mut_ptr() as *mut c_void,
-                DataType::INT8 => slice::from_raw_parts_mut(
-                    self.data().as_mut_ptr() as *mut i8,
-                    self.data().len() / mem::size_of::<i8>(),
-                )
-                .as_mut_ptr() as *mut c_void,
-                DataType::FP32 => slice::from_raw_parts_mut(
-                    self.data().as_mut_ptr() as *mut f32,
-                    self.data().len() / mem::size_of::<f32>(),
-                )
-                .as_mut_ptr() as *mut c_void,
-            }
-        };
+        // let data = unsafe {
+        //     match self.dtype() {
+        //         DataType::INT32 => slice::from_raw_parts_mut(
+        //             self.data().as_mut_ptr() as *mut i32,
+        //             self.data().len() / mem::size_of::<i32>(),
+        //         )
+        //         .as_mut_ptr() as *mut c_void,
+        //         DataType::INT8 => slice::from_raw_parts_mut(
+        //             self.data().as_mut_ptr() as *mut i8,
+        //             self.data().len() / mem::size_of::<i8>(),
+        //         )
+        //         .as_mut_ptr() as *mut c_void,
+        //         DataType::FP32 => slice::from_raw_parts_mut(
+        //             self.data().as_mut_ptr() as *mut f32,
+        //             self.data().len() / mem::size_of::<f32>(),
+        //         )
+        //         .as_mut_ptr() as *mut c_void,
+        //     }
+        // };
 
         DLTensor {
-            data,
+            data: self.data().as_mut_ptr() as *mut c_void,
             ctx: DLContext {
                 device_type: DLDeviceType_kDLCPU,
                 device_id: 0 as c_int,
             },
             ndim: self.shape.len() as c_int,
             dtype: self.dtype().as_dldtype(),
-            shape: self.shape().as_ptr() as *mut i64,
+            shape: self.shape().as_mut_ptr() as *mut i64,
             strides: self.strides.as_ref().unwrap().as_ptr() as *mut i64,
+            byte_offset: 0,
             ..Default::default()
         }
     }
@@ -164,10 +167,15 @@ impl Default for Tensor {
 impl From<DLTensor> for Tensor {
     fn from(dlt: DLTensor) -> Self {
         unsafe {
+            let shape =
+                slice::from_raw_parts_mut(dlt.shape as *mut usize, dlt.ndim as usize).to_vec();
+            let size = shape.iter().map(|v| *v as usize).product::<usize>() as usize;
+            let itemsize = dlt.dtype.bits as usize / 8;
+            let data = slice::from_raw_parts(dlt.data as *const u8, size * itemsize).to_vec();
+
             Self {
                 dtype: DataType::from(dlt.dtype),
-                shape: slice::from_raw_parts_mut(dlt.shape as *mut usize, dlt.ndim as usize)
-                    .to_vec(),
+                shape,
                 strides: if dlt.strides.is_null() {
                     None
                 } else {
@@ -176,8 +184,7 @@ impl From<DLTensor> for Tensor {
                             .to_vec(),
                     )
                 },
-                data: slice::from_raw_parts_mut(dlt.strides as *mut u8, dlt.byte_offset as usize)
-                    .to_vec(),
+                data,
             }
         }
     }
