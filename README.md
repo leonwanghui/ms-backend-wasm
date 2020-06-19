@@ -3,7 +3,7 @@
 [![Releases](https://img.shields.io/github/release/leonwanghui/ms-backend-wasm/all.svg?style=flat-square)](https://github.com/leonwanghui/ms-backend-wasm/releases)
 [![LICENSE](https://img.shields.io/github/license/leonwanghui/osc-serverless.svg?style=flat-square)](https://github.com/leonwanghui/ms-backend-wasm/blob/master/LICENSE)
 
-#### Experimental notice: This project is still *experimental* and only serves as a proof of concept for running [MindSpore](https://github.com/mindspore-ai/mindspore) on WebAssembly runtime.
+#### Experimental notice: This project is still *experimental* and only serves as a proof of concept for running [MindSpore](https://github.com/mindspore-ai/mindspore) on [WebAssembly runtime](https://github.com/bytecodealliance/wasmtime).
 
 - [MindSpore WebAssembly Backend](#mindspore-webassembly-backend)
     - [Background](#background)
@@ -14,8 +14,8 @@
     - [Use cases](#use-cases)
         - [Web scenarios](#web-scenarios)
         - [Non-web scenarios](#non-web-scenarios)
+    - [TVM runtime support](#tvm-runtime-support)
     - [Future Work](#future-work)
-        - [TVM runtime support](#tvm-runtime-support)
         - [TOPI WASM build](#topi-wasm-build)
         - [MindSpore frontend integration](#mindSpore-frontend-integration)
         - [Wasmtime interface types support](#wasmtime-interface-types-support)
@@ -101,15 +101,11 @@ Options:
     -h, --help          print this help menu
 ```
 
+## TVM Runtime Support
+
+Currently this project has supported TVM runtime for auto kernel generation. Please see [README.md](./wasm-backend-tvm/README.md) for the details.
+
 ## Future Work
-
-### TVM runtime support
-
-Currently the operator libs is `handwriting-only`, which is not flexible enough to scale out and not efficient to be executed. Therefore, we are working on adding [TVM runtime](https://github.com/apache/incubator-tvm) support in the short term.
-
-<img src="https://github.com/dmlc/web-data/raw/master/tvm/tutorial/tvm_support_list.png" alt="TVM hardware support" width="600"/>
-
-As demonstrated in TVM runtime [tutorials](https://tvm.apache.org/docs/tutorials/relay_quick_start.html), TVM already supports WASM as the optional hardware backend, so we can leverage the features of WebAssembly (portability, security) and TVM runtime (domain-specific, optimization) to build a flexible and auto-optimized backend for MindSpore.
 
 ### TOPI WASM build
 
@@ -121,7 +117,7 @@ Although it is ONLY a PoC on running MindSpore on WebAssembly runtime, we will d
 
 ### Wasmtime interface types support
 
-With the latest stable version (`v0.16.0`), support for interface types has temporarily removed from Wasmtime. So currently working with WebAssembly modules means it can only deal with integers and floats, and more rich types (like byte arrays, strings, structure, etc.) are not supported. For more information see https://github.com/bytecodealliance/wasmtime/issues/677.
+With the latest stable version (`v0.16.0`), support for interface types has temporarily removed from Wasmtime. So currently working with WebAssembly modules means it can only deal with integers and floats, and more rich types (like byte arrays, strings, structure, etc.) are not supported. For more information see <https://github.com/bytecodealliance/wasmtime/issues/677>.
 
 ## Appendix
 
