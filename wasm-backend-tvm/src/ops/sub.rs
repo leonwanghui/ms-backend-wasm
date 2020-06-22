@@ -14,7 +14,7 @@ impl TVMSubOp {
 }
 
 impl Operator for TVMSubOp {
-    fn init(&self, a_shape: Vec<usize>, b_shape: Vec<usize>, c_shape: Vec<usize>) -> Status {
+    fn init(&self, a_shape: Vec<i64>, b_shape: Vec<i64>, c_shape: Vec<i64>) -> Status {
         if !((a_shape.len() == b_shape.len()
             && a_shape
                 .iter()
@@ -38,13 +38,13 @@ impl Operator for TVMSubOp {
         Status::Succeed
     }
 
-    fn launch(&self, inputs: Vec<Tensor>, output: Tensor) -> (Status, Tensor) {
+    fn launch(&self, mut inputs: Vec<Tensor>, output: Tensor) -> (Status, Tensor) {
         if inputs.len() != 2 {
             println!("Inputs tensor length should be 2!");
             return (Status::LaunchFailed, Tensor::default());
         }
-        let mut l_tensor = inputs.get(0).unwrap().as_dltensor();
-        let mut r_tensor = inputs.get(1).unwrap().as_dltensor();
+        let mut l_tensor = inputs.get_mut(0).unwrap().as_dltensor();
+        let mut r_tensor = inputs.get_mut(1).unwrap().as_dltensor();
         let mut out_tensor = output.as_dltensor();
 
         unsafe {

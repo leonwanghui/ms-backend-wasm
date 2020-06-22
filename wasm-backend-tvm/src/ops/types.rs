@@ -1,4 +1,5 @@
 use std::{
+    any::TypeId,
     convert::From,
     os::raw::{c_int, c_void},
     slice,
@@ -9,7 +10,7 @@ use tvm_common::ffi::{
 };
 
 pub trait Operator {
-    fn init(&self, a_shape: Vec<usize>, b_shape: Vec<usize>, c_shape: Vec<usize>) -> Status;
+    fn init(&self, a_shape: Vec<i64>, b_shape: Vec<i64>, c_shape: Vec<i64>) -> Status;
 
     fn launch(&self, inputs: Vec<Tensor>, output: Tensor) -> (Status, Tensor);
 }
@@ -65,6 +66,12 @@ impl DataType {
             },
         }
     }
+
+    /// Returns whether this `DataType` represents primitive type `T`.
+    pub fn is_type<T: 'static>(&self) -> bool {
+        let typ = TypeId::of::<T>();
+        typ == TypeId::of::<i32>() || typ == TypeId::of::<i8>() || typ == TypeId::of::<f32>()
+    }
 }
 
 impl From<DLDataType> for DataType {
@@ -84,14 +91,14 @@ impl From<DLDataType> for DataType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tensor {
     pub(crate) dtype: DataType,
-    pub(crate) shape: Vec<usize>,
+    pub(crate) shape: Vec<i64>,
     pub(crate) strides: Option<Vec<usize>>,
     pub(crate) data: Vec<u8>,
 }
 
 #[allow(dead_code)]
 impl Tensor {
-    pub fn new(dtype: DataType, shape: Vec<usize>, strides: Vec<usize>, data: Vec<u8>) -> Self {
+    pub fn new(dtype: DataType, shape: Vec<i64>, strides: Vec<usize>, data: Vec<u8>) -> Self {
         Tensor {
             dtype: dtype,
             shape: shape,
@@ -108,7 +115,7 @@ impl Tensor {
         self.shape.len()
     }
 
-    pub fn shape(&self) -> Vec<usize> {
+    pub fn shape(&self) -> Vec<i64> {
         self.shape.clone()
     }
 
@@ -118,17 +125,34 @@ impl Tensor {
 
     pub fn as_dltensor(&self) -> DLTensor {
         DLTensor {
-            data: self.data().as_mut_ptr() as *mut c_void,
+            data: self.data.as_ptr() as *mut c_void,
             ctx: DLContext {
                 device_type: DLDeviceType_kDLCPU,
                 device_id: 0 as c_int,
             },
             ndim: self.shape.len() as c_int,
             dtype: self.dtype().as_dldtype(),
-            shape: self.shape().as_mut_ptr() as *mut i64,
+            shape: self.shape.as_ptr() as *mut i64,
             strides: self.strides.as_ref().unwrap().as_ptr() as *mut i64,
             byte_offset: 0,
             ..Default::default()
+        }
+    }
+
+    /// Returns the data of this `Tensor` as a `Vec`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `Tensor` does not contain elements of type `T`.
+    pub fn to_vec<T: 'static + std::fmt::Debug + Clone>(&self) -> Vec<T> {
+        assert!(self.dtype().is_type::<T>());
+
+        unsafe {
+            slice::from_raw_parts(
+                self.data().as_ptr() as *const T,
+                self.shape().iter().map(|v| *v as usize).product::<usize>() as usize,
+            )
+            .to_vec()
         }
     }
 }
@@ -147,10 +171,9 @@ impl Default for Tensor {
 impl From<DLTensor> for Tensor {
     fn from(dlt: DLTensor) -> Self {
         unsafe {
-            let shape =
-                slice::from_raw_parts_mut(dlt.shape as *mut usize, dlt.ndim as usize).to_vec();
+            let shape = slice::from_raw_parts_mut(dlt.shape, dlt.ndim as usize).to_vec();
             let size = shape.iter().map(|v| *v as usize).product::<usize>() as usize;
-            let itemsize = dlt.dtype.bits as usize / 8;
+            let itemsize: usize = (dlt.dtype.bits >> 3).into();
             let data = slice::from_raw_parts(dlt.data as *const u8, size * itemsize).to_vec();
 
             Self {

@@ -1,4 +1,4 @@
-use std::{convert::From, mem, slice};
+use std::{any::TypeId, convert::From, mem, slice};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum DataType {
@@ -7,17 +7,25 @@ pub enum DataType {
     INT8,
 }
 
+impl DataType {
+    /// Returns whether this `DataType` represents primitive type `T`.
+    pub fn is_type<T: 'static>(&self) -> bool {
+        let typ = TypeId::of::<T>();
+        typ == TypeId::of::<i32>() || typ == TypeId::of::<i8>() || typ == TypeId::of::<f32>()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tensor {
     pub(crate) dtype: DataType,
-    pub(crate) shape: Vec<usize>,
+    pub(crate) shape: Vec<i64>,
     pub(crate) strides: Option<Vec<usize>>,
     pub(crate) data: Vec<u8>,
 }
 
 #[allow(dead_code)]
 impl Tensor {
-    pub fn new(dtype: DataType, shape: Vec<usize>, strides: Vec<usize>, data: Vec<u8>) -> Self {
+    pub fn new(dtype: DataType, shape: Vec<i64>, strides: Vec<usize>, data: Vec<u8>) -> Self {
         Tensor {
             dtype: dtype,
             shape: shape,
@@ -34,12 +42,29 @@ impl Tensor {
         self.shape.len()
     }
 
-    pub fn shape(&self) -> Vec<usize> {
+    pub fn shape(&self) -> Vec<i64> {
         self.shape.clone()
     }
 
     pub fn data(&self) -> Vec<u8> {
         self.data.clone()
+    }
+
+    /// Returns the data of this `Tensor` as a `Vec`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `Tensor` does not contain elements of type `T`.
+    pub fn to_vec<T: 'static + std::fmt::Debug + Clone>(&self) -> Vec<T> {
+        assert!(self.dtype().is_type::<T>());
+
+        unsafe {
+            slice::from_raw_parts(
+                self.data().as_ptr() as *const T,
+                self.shape().iter().map(|v| *v as usize).product::<usize>() as usize,
+            )
+            .to_vec()
+        }
     }
 }
 
@@ -62,7 +87,7 @@ macro_rules! impl_tensor_from_ndarray {
             fn from(arr: ndarray::Array<$type, D>) -> Self {
                 Tensor {
                     dtype: $typecode,
-                    shape: arr.shape().to_vec(),
+                    shape: arr.shape().iter().map(|v| *v as i64).collect(),
                     strides: Some(arr.strides().iter().map(|v| *v as usize).collect()),
                     data: unsafe {
                         slice::from_raw_parts(

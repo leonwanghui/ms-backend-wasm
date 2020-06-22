@@ -96,7 +96,10 @@ fn main() {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };
-    println!("{}", serde_json::to_string_pretty(&result).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&result.to_vec::<f32>()).unwrap()
+    );
 }
 
 fn execute(wasm_backend_file: String, op_type: i32, input_data: Vec<Tensor>) -> Result<Tensor> {

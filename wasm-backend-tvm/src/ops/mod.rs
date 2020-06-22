@@ -26,7 +26,7 @@ pub fn validate_inputs(inputs: &Vec<Tensor>) -> Status {
     }
 }
 
-pub fn parse_inputs_shape(inputs: &Vec<Tensor>) -> (Vec<usize>, Vec<usize>, Vec<usize>) {
+pub fn parse_inputs_shape(inputs: &Vec<Tensor>) -> (Vec<i64>, Vec<i64>, Vec<i64>) {
     if inputs.len() == 3 {
         (inputs[0].shape(), inputs[1].shape(), inputs[2].shape())
     } else {
