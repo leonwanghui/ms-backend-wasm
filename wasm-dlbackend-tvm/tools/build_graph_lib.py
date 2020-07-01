@@ -17,40 +17,57 @@
 # under the License.
 
 """Builds a simple graph for testing."""
-
-from os import path as osp
+import argparse
+import os
+import subprocess
 import sys
 
-import numpy as np
+import onnx
 import tvm
-from tvm import te
 from tvm import relay
-from tvm.relay import testing
 
 
-def _get_model(dshape):
-    data = relay.var('data', shape=dshape)
-    fc = relay.nn.dense(data, relay.var("dense_weight"), units=dshape[-1]*2)
-    fc = relay.nn.bias_add(fc, relay.var("dense_bias"))
-    left, right = relay.split(fc, indices_or_sections=2, axis=1)
-    one = relay.const(1, dtype="float32")
-    return relay.Tuple([(left + one), (right - one), fc])
+def _get_mod_and_params(model_file):
+    onnx_model = onnx.load(model_file)
+    shape_dict = {}
+    for input in onnx_model.graph.input:
+        shape_dict[input.name] = [dim.dim_value for dim in input.type.tensor_type.shape.dim]
+
+    return relay.frontend.from_onnx(onnx_model, shape_dict)
 
 
-def main():
-    dshape = (4, 8)
-    net = _get_model(dshape)
-    mod, params = testing.create_workload(net)
-    graph, lib, params = relay.build(
-        mod, target="llvm -target=wasm32-unknown-unknown --system-lib", params=params)
+def build_graph_lib(model_file, opt_level):
+    """Compiles the pre-trained model with TVM"""
+    out_dir = os.path.join(sys.path[0], "../lib")
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
 
-    lib.save(osp.join(sys.argv[1], 'graph.o'))
-    with open(osp.join(sys.argv[1], 'graph.json'), 'w') as f_resnet:
-        f_resnet.write(graph)
+    # Compile the relay mod
+    mod, params = _get_mod_and_params(model_file)
+    with tvm.transform.PassContext(opt_level=opt_level):
+        graph_json, lib, params = relay.build(
+            mod, target="llvm -target=wasm32-unknown-unknown --system-lib", params=params)
 
-    with open(osp.join(sys.argv[1], 'graph.params'), 'wb') as f_params:
+    # Save the model artifacts to obj_file
+    obj_file = os.path.join(out_dir, 'graph.o')
+    lib.save(obj_file)
+    # Run llvm-ar to archive obj_file into lib_file
+    lib_file = os.path.join(out_dir, 'libgraph_wasm32.a')
+    cmds = [os.environ.get("LLVM_AR", "llvm-ar-10"), 'rcs', lib_file, obj_file]
+    subprocess.run(cmds)
+
+    with open(os.path.join(out_dir, 'graph.json'), 'w') as f_graph:
+        f_graph.write(graph_json)
+
+    with open(os.path.join(out_dir, 'graph.params'), 'wb') as f_params:
         f_params.write(relay.save_param_dict(params))
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='ONNX ResNet50 model build example')
+    parser.add_argument('model_file', type=str, help='the path of onnx model file')
+    parser.add_argument('-O', '--opt-level', type=int, default=0,
+                        help='level of optimization. 0 is unoptimized and 3 is the highest level')
+    args = parser.parse_args()
+
+    build_graph_lib(args.model_file, args.opt_level)

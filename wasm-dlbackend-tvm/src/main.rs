@@ -16,99 +16,123 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+extern crate csv;
+extern crate image;
 #[macro_use]
+extern crate lazy_static;
 extern crate ndarray;
-extern crate serde;
-extern crate serde_json;
-
 extern crate tvm_runtime;
-use std::{collections::HashMap, convert::TryFrom, fs, io::Read};
 
+use image::{FilterType, GenericImageView};
 use ndarray::Array;
+use std::{collections::HashMap, convert::TryFrom, env, sync::Mutex};
 use tvm_runtime::{Graph, GraphExecutor, SystemLibModule, Tensor};
 
-const BATCH_SIZE: usize = 4;
-const IN_DIM: usize = 8;
-
-macro_rules! check_sum {
-    ($e:expr, $a:ident, $b:ident) => {
-        let a = Array::try_from($e.get_input(stringify!($a)).unwrap().to_owned()).unwrap();
-        check_sum!(a, $b);
-    };
-    ($e:expr, $a:expr, $b:ident) => {
-        let a = Array::try_from($e.get_output($a).unwrap().to_owned()).unwrap();
-        check_sum!(a, $b);
-    };
-    ($a:ident, $b:ident) => {
-        let a_sum: f32 = $a.scalar_sum();
-        let b_sum: f32 = $b.scalar_sum();
-        assert!((a_sum - b_sum).abs() < 1e-2, "{} != {}", a_sum, b_sum);
-    };
-}
+const IMG_HEIGHT: usize = 224;
+const IMG_WIDTH: usize = 224;
 
 extern "C" {
     fn __wasm_call_ctors();
 }
 
-fn main() {
-    unsafe {
-        // This is necessary to invoke TVMBackendRegisterSystemLibSymbol
-        // API calls.
-        __wasm_call_ctors();
+lazy_static! {
+    static ref SYSLIB: SystemLibModule = SystemLibModule::default();
+    static ref GRAPH_EXECUTOR: Mutex<GraphExecutor<'static, 'static>> = {
+        unsafe {
+            // This is necessary to invoke TVMBackendRegisterSystemLibSymbol
+            // API calls.
+            __wasm_call_ctors();
+        }
+        let graph = Graph::try_from(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/lib/graph.json"
+        )))
+        .unwrap();
+        let params_bytes =
+            include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/lib/graph.params"));
+        let params = tvm_runtime::load_param_dict(params_bytes)
+            .unwrap()
+            .into_iter()
+            .map(|(k, v)| (k, v.to_owned()))
+            .collect::<HashMap<String, Tensor<'static>>>();
+
+        let mut exec = GraphExecutor::new(graph, &*SYSLIB).unwrap();
+        exec.load_params(params);
+
+        Mutex::new(exec)
+    };
+}
+
+fn preprocess(img: image::DynamicImage) -> Tensor<'static> {
+    println!("original image dimensions: {:?}", img.dimensions());
+    let img = img
+        .resize_exact(IMG_HEIGHT as u32, IMG_WIDTH as u32, FilterType::Nearest)
+        .to_rgb();
+    println!("resized image dimensions: {:?}", img.dimensions());
+    let mut pixels: Vec<f32> = vec![];
+    for pixel in img.pixels() {
+        let tmp = pixel.data;
+        // normalize the RGB channels using mean, std of imagenet1k
+        let tmp = [
+            (tmp[0] as f32 - 123.0) / 58.395, // R
+            (tmp[1] as f32 - 117.0) / 57.12,  // G
+            (tmp[2] as f32 - 104.0) / 57.375, // B
+        ];
+        for e in &tmp {
+            pixels.push(*e);
+        }
     }
-    let syslib = SystemLibModule::default();
 
-    let mut params_bytes = Vec::new();
-    fs::File::open(concat!(env!("CARGO_MANIFEST_DIR"), "/lib/graph.params"))
+    // (H,W,C) -> (C,H,W)
+    let arr = Array::from_shape_vec((IMG_HEIGHT, IMG_WIDTH, 3), pixels).unwrap();
+    let arr = arr.permuted_axes([2, 0, 1]);
+    let arr = Array::from_iter(arr.into_iter().map(|&v| v));
+
+    return Tensor::from(arr);
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    let img_file = &args[1];
+    let img = image::open(img_file).unwrap();
+    let input = preprocess(img);
+
+    GRAPH_EXECUTOR.lock().unwrap().set_input("data", input);
+    GRAPH_EXECUTOR.lock().unwrap().run();
+    let output = GRAPH_EXECUTOR
+        .lock()
         .unwrap()
-        .read_to_end(&mut params_bytes)
-        .unwrap();
-    let params = tvm_runtime::load_param_dict(&params_bytes)
+        .get_output(0)
         .unwrap()
-        .into_iter()
-        .map(|(k, v)| (k, v.to_owned()))
-        .collect::<HashMap<String, Tensor<'static>>>();
+        .to_vec::<f32>();
 
-    let graph = Graph::try_from(
-        &fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/lib/graph.json")).unwrap(),
-    )
-    .unwrap();
-    let mut exec = GraphExecutor::new(graph, &syslib).unwrap();
+    // find the maximum entry in the output and its index
+    let mut argmax = -1;
+    let mut max_prob = 0.;
+    for i in 0..output.len() {
+        if output[i] > max_prob {
+            max_prob = output[i];
+            argmax = i as i32;
+        }
+    }
 
-    let x = Array::from_shape_vec(
-        (BATCH_SIZE, IN_DIM),
-        (0..BATCH_SIZE * IN_DIM)
-            .map(|x| x as f32)
-            .collect::<Vec<f32>>(),
-    )
-    .unwrap();
+    // create a hash map of (class id, class name)
+    let mut synset: HashMap<i32, String> = HashMap::new();
+    let mut rdr = csv::ReaderBuilder::new().from_reader(
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tools/synset.csv")).as_bytes(),
+    );
 
-    let p0 = params.get("p0").unwrap().to_owned();
-    let p1 = params.get("p1").unwrap().to_owned();
-    println!("p0: {:?}", p0.shape());
-    println!("p1: {:?}", p1.shape());
-    let w = Array::try_from(p0)
-        .unwrap()
-        .into_shape((BATCH_SIZE * 4, IN_DIM))
-        .unwrap();
-    let b = Array::try_from(p1).unwrap();
-    let dense = x.dot(&w.t()) + &b;
-    let left = dense.slice(s![.., 0..IN_DIM]);
-    let right = dense.slice(s![.., IN_DIM..]);
-    let expected_o0 = &left + 1f32;
-    let expected_o1 = &right - 1f32;
+    for result in rdr.records() {
+        let record = result.unwrap();
+        let id: i32 = record[0].parse().unwrap();
+        let cls = record[1].to_string();
+        synset.insert(id, cls);
+    }
 
-    exec.load_params(params);
-    exec.set_input("data", (&x).into());
-
-    check_sum!(exec, data, x);
-    check_sum!(exec, p0, w);
-    check_sum!(exec, p1, b);
-
-    exec.run();
-
-    check_sum!(exec, 0, expected_o0);
-    check_sum!(exec, 1, expected_o1);
-    check_sum!(exec, 2, dense);
+    println!(
+        "input image belongs to the class `{}`",
+        synset
+            .get(&argmax)
+            .expect("cannot find the class id for argmax")
+    );
 }

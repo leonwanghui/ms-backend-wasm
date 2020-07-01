@@ -23,6 +23,6 @@ serde = "1.0.53"
 serde_json = "1.0.53"
 ndarray = "0.12"
 tvm-runtime = { version = "0.1", path = "../third_party/tvm/rust/runtime" }
-
-[build-dependencies]
-ar = "0.6"
+csv = "1.1"
+image = "0.20"
+lazy_static = "1.1.1"
