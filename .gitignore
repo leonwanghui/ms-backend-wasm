@@ -33,6 +33,7 @@
 
 # Built packages
 build/
+../lib/
 
 # Workspaces
 .vscode/
