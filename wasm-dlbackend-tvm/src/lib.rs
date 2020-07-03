@@ -46,6 +46,7 @@ lazy_static! {
 
 #[no_mangle]
 pub extern "C" fn run(in_addr: i32, in_size: i32, out_addr: i32) -> i32 {
+    println!("in_addr = {:x?}, in_size = {}", in_addr, in_size);
     let in_tensor = utils::load_input(in_addr, in_size as usize);
     let input: TVMTensor = in_tensor.as_dltensor().into();
 

@@ -3,7 +3,7 @@ extern crate serde_derive;
 extern crate csv;
 extern crate image;
 
-pub mod types;
+mod types;
 use types::Tensor;
 
 use anyhow::Result;
@@ -54,12 +54,11 @@ fn main() {
     let img = image::open(input_data_file).unwrap();
     let input = data_preprocess(img);
 
-    let result: Tensor = match execute(wasm_backend_file, input) {
+    let output: Tensor = match execute(wasm_backend_file, input) {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };
-
-    output_assert(result);
+    output_assert(output);
 }
 
 fn data_preprocess(img: image::DynamicImage) -> Tensor {
@@ -99,7 +98,7 @@ fn execute(wasm_backend_file: String, input_data: Tensor) -> Result<Tensor> {
     // Create an instance of `Wasi` which contains a `WasiCtx`. Note that
     // `WasiCtx` provides a number of ways to configure what the target program
     // will have access to.
-    let wasi = Wasi::new(&store, WasiCtx::new(std::env::args())?);
+    let wasi = Wasi::new(&store, WasiCtx::new(env::args())?);
     wasi.add_to_linker(&mut linker)?;
 
     let module = Module::from_file(store.engine(), &wasm_backend_file)?;
@@ -108,15 +107,14 @@ fn execute(wasm_backend_file: String, input_data: Tensor) -> Result<Tensor> {
         .get_memory("memory")
         .ok_or(anyhow::format_err!("failed to find `memory` export"))?;
 
-    // Specify the input address and output address to access the wasm memory.
-    let in_addr = 0x100000;
-    let out_addr = 0x600000;
-
+    // Specify the input address to access the wasm memory.
+    let in_addr = 0x1000;
+    let out_addr = 0x2000;
     // Serialize the data into a JSON string.
     let in_data = serde_json::to_vec(&input_data)?;
     let in_size = in_data.len();
-    //println!("input tensor = {:?}", input_data.to_vec::<f32>());
-    println!("input size = {}", in_size);
+    assert!(memory.data_size() > in_size);
+
     // Insert the input data into wasm memory.
     for i in 0..in_size {
         unsafe {
@@ -124,7 +122,7 @@ fn execute(wasm_backend_file: String, input_data: Tensor) -> Result<Tensor> {
         }
     }
 
-    // Invoke `run` export
+    // Invoke `run` export.
     let run = instance
         .get_func("run")
         .ok_or(anyhow::format_err!("failed to find `run` function export!"))?
@@ -135,6 +133,7 @@ fn execute(wasm_backend_file: String, input_data: Tensor) -> Result<Tensor> {
         panic!("graph run failed!");
     }
 
+    println!("test2!");
     let out_data = unsafe { &memory.data_unchecked()[out_addr..][..out_size as usize] };
     let out_vec: Tensor = serde_json::from_slice(out_data).unwrap();
     Ok(out_vec)
@@ -143,7 +142,7 @@ fn execute(wasm_backend_file: String, input_data: Tensor) -> Result<Tensor> {
 fn output_assert(out_tensor: Tensor) {
     let output = out_tensor.to_vec::<f32>();
 
-    // find the maximum entry in the output and its index
+    // Find the maximum entry in the output and its index.
     let mut argmax = -1;
     let mut max_prob = 0.;
     for i in 0..output.len() {
@@ -153,7 +152,7 @@ fn output_assert(out_tensor: Tensor) {
         }
     }
 
-    // create a hash map of (class id, class name)
+    // Create a hash map of (class id, class name)
     let mut synset: HashMap<i32, String> = HashMap::new();
     let mut rdr = csv::ReaderBuilder::new().from_reader(
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tools/synset.csv")).as_bytes(),
