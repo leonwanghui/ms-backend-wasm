@@ -107,18 +107,18 @@ fn execute(wasm_backend_file: String, input_data: Tensor) -> Result<Tensor> {
         .get_memory("memory")
         .ok_or(anyhow::format_err!("failed to find `memory` export"))?;
 
-    // Specify the input address to access the wasm memory.
-    let in_addr = 0x1000;
-    let out_addr = 0x2000;
+    // Specify the wasm address to access the wasm memory.
+    let wasm_addr = memory.data_size();
     // Serialize the data into a JSON string.
     let in_data = serde_json::to_vec(&input_data)?;
     let in_size = in_data.len();
-    assert!(memory.data_size() > in_size);
+    // Grow up memory size according to in_size to avoid memory leak.
+    memory.grow((in_size >> 16) as u32 + 1)?;
 
     // Insert the input data into wasm memory.
     for i in 0..in_size {
         unsafe {
-            memory.data_unchecked_mut()[in_addr + i] = *in_data.get(i).unwrap();
+            memory.data_unchecked_mut()[wasm_addr + i] = *in_data.get(i).unwrap();
         }
     }
 
@@ -126,15 +126,14 @@ fn execute(wasm_backend_file: String, input_data: Tensor) -> Result<Tensor> {
     let run = instance
         .get_func("run")
         .ok_or(anyhow::format_err!("failed to find `run` function export!"))?
-        .get3::<i32, i32, i32, i32>()?;
+        .get2::<i32, i32, i32>()?;
 
-    let out_size = run(in_addr as i32, in_size as i32, out_addr as i32)?;
+    let out_size = run(wasm_addr as i32, in_size as i32)?;
     if out_size == 0 {
         panic!("graph run failed!");
     }
 
-    println!("test2!");
-    let out_data = unsafe { &memory.data_unchecked()[out_addr..][..out_size as usize] };
+    let out_data = unsafe { &memory.data_unchecked()[wasm_addr..][..out_size as usize] };
     let out_vec: Tensor = serde_json::from_slice(out_data).unwrap();
     Ok(out_vec)
 }
