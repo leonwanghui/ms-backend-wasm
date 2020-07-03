@@ -4,6 +4,6 @@
 [submodule "third_party/tvm"]
     path = third_party/tvm
     url = https://github.com/apache/incubator-tvm.git
-[submodule "wasm-dlbackend-tvm/tvm"]
-    path = wasm-dlbackend-tvm/tvm
+[submodule "wasm-graphcompiler-tvm/tvm"]
+    path = wasm-graphcompiler-tvm/tvm
     url = https://github.com/leonwanghui/incubator-tvm.git
