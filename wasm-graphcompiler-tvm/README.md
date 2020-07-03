@@ -16,7 +16,7 @@
 
 ## Motivation
 
-After finishing [wasm-kernelcompiler-tvm](../wasm-kernelcompiler-tvm/README.md) prototype, we found that directly generating generic kernels may not give the best performance for deployment, as the compilation approach takes a lot of shape specialization and fusions. Therefore, we are working on adding [TVM Relay](https://tvm.apache.org/docs/dev/relay_intro.html) support in the short term.
+After finishing [wasm-kernelcompiler-tvm](../wasm-kernelcompiler-tvm/README.md) MVP, we found that directly generating generic kernels may not give the best performance for deployment, as the compilation approach takes a lot of shape specialization and fusions. Therefore, we are working on adding [TVM Relay](https://tvm.apache.org/docs/dev/relay_intro.html) support in the short term.
 
 ## Framework Landscape
 
@@ -44,10 +44,10 @@ The figure below demonstrates the whole landscape of running MindSpore framework
 
 This project should be considered **experimental** at the very early stage, all rich features are under active development. Here is the current operator support matrix:
 
-| Model Name | Introduced | Supported |
-| ---------- | ---------- | --------- |
-| ResNet50 | `v0.0.3` | ✔️ |
-| LeNet | <center>&mdash;</center> | <center>&mdash;</center> |
+| Model Name | Status |
+| ---------- | ------ |
+| ResNet50 | ✔️ |
+| LeNet | <center>&mdash;</center> |
 
 **NOTICE**: Currently this project is ONLY tested on Ubuntu system, so `Ubuntu 16.04+` should be prepared as the testing environment.
 
@@ -58,22 +58,22 @@ Before running this demo, please make sure [`Rust`](#system-packages-install) ha
 Next run the command below to install the frontend package for testing (`rust` REQUIRED):
 
 ```shell
-cd scenarios/ms-nonweb-plat/wasm-frontend-tvm/ && cargo build --release
-cp ./target/release/wasm-frontend-tvm /usr/local/bin/
+cd scenarios/ms-nonweb-plat/wasm-graphfrontend/ && cargo build --release
+cp ./target/release/wasm-graphfrontend /usr/local/bin/
 ```
 
-Check the usage of `wasm-frontend-tvm`:
+Check the usage of `wasm-graphfrontend`:
 
 ```shell
-~# wasm-frontend-tvm -h
+~# wasm-graphfrontend -h
 
-Usage: wasm-frontend-tvm [options]
+Usage: wasm-graphfrontend [options]
 
 Options:
     -c, --ms-backend-config FILE_PATH
                         set wasm backend config file
-    -o, --op-type VALUE set the operator type, currently ONLY support Add and
-                        Sub, default: Add.
+    -i, --input-data-file FILE_PATH
+                        set the path to input image file
     -h, --help          print this help menu
 ```
 
