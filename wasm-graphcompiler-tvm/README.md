@@ -116,7 +116,7 @@ This project should be considered **experimental** at the very early stage, all 
   - Compile
 
     ```
-    LLVM_AR=llvm-ar-10 python ./build_grpah_lib.py -O3 ./resnet50v1.onnx
+    LLVM_AR=llvm-ar-10 python ./build_graph_lib.py -O3 ./resnet50v1.onnx
     ```
 
 ### Build wasm-graphcompiler-tvm package
@@ -166,7 +166,7 @@ TODO
 ### Performance benchmark
 
 We are working on several improvements on performances:
-* WebAssemvly SIMD support
+* WebAssembly SIMD support
 * Auto-tvm enhancement for llvm target
 
 ### Native TVM Rust runtime support

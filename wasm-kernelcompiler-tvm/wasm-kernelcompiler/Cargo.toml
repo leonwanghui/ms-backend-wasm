@@ -26,5 +26,5 @@ serde = "1.0.53"
 serde_derive = "1.0.53"
 serde_json = "1.0.53"
 ndarray = "0.12"
-tvm-common = { version = "0.1", path = "../third_party/tvm/rust/common" }
-tvm-runtime = { version = "0.1", path = "../third_party/tvm/rust/runtime" }
+tvm-common = { version = "0.1", path = "../../third_party/tvm/rust/common" }
+tvm-runtime = { version = "0.1", path = "../../third_party/tvm/rust/runtime" }
