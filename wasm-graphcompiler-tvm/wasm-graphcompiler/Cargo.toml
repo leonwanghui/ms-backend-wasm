@@ -9,11 +9,6 @@ repository = "https://github.com/leonwanghui/ms-backend-wasm"
 license = "Apache-2.0"
 keywords = ["wasm", "machine learning", "tvm"]
 
-[package.metadata]
-wasm-opt = true
-wasm-name-section = false
-wasm-producers-section = false
-
 [profile.release]
 lto = true
 opt-level = 's'

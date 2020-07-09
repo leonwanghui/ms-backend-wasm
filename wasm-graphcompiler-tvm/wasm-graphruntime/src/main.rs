@@ -3,17 +3,14 @@ extern crate serde_derive;
 extern crate csv;
 extern crate image;
 
-mod types;
+pub mod types;
 use types::Tensor;
+mod runtime;
 
-use anyhow::Result;
 use getopts::Options;
 use image::{FilterType, GenericImageView};
 use ndarray::Array;
-use serde_json;
 use std::{collections::HashMap, env};
-use wasmtime::*;
-use wasmtime_wasi::{Wasi, WasiCtx};
 
 const IMG_HEIGHT: usize = 224;
 const IMG_WIDTH: usize = 224;
@@ -49,12 +46,18 @@ fn main() {
         print_usage(&program, opts);
         return;
     }
-    let wasm_backend_file = matches.opt_str("c").unwrap();
-    let input_data_file = matches.opt_str("i").unwrap();
+    let wasm_backend_file: String = match matches.opt_str("c") {
+        Some(s) => s,
+        None => String::from(""),
+    };
+    let input_data_file: String = match matches.opt_str("i") {
+        Some(s) => s,
+        None => String::from(""),
+    };
     let img = image::open(input_data_file).unwrap();
     let input = data_preprocess(img);
 
-    let output: Tensor = match execute(wasm_backend_file, input) {
+    let output: Tensor = match runtime::execute(wasm_backend_file, input) {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };
@@ -87,55 +90,6 @@ fn data_preprocess(img: image::DynamicImage) -> Tensor {
     let arr = Array::from_iter(arr.into_iter().map(|&v| v));
 
     return Tensor::from(arr);
-}
-
-fn execute(wasm_backend_file: String, input_data: Tensor) -> Result<Tensor> {
-    let store = Store::default();
-
-    // First set up our linker which is going to be linking modules together. We
-    // want our linker to have wasi available, so we set that up here as well.
-    let mut linker = Linker::new(&store);
-    // Create an instance of `Wasi` which contains a `WasiCtx`. Note that
-    // `WasiCtx` provides a number of ways to configure what the target program
-    // will have access to.
-    let wasi = Wasi::new(&store, WasiCtx::new(env::args())?);
-    wasi.add_to_linker(&mut linker)?;
-
-    let module = Module::from_file(store.engine(), &wasm_backend_file)?;
-    let instance = linker.instantiate(&module)?;
-    let memory = instance
-        .get_memory("memory")
-        .ok_or(anyhow::format_err!("failed to find `memory` export"))?;
-
-    // Specify the wasm address to access the wasm memory.
-    let wasm_addr = memory.data_size();
-    // Serialize the data into a JSON string.
-    let in_data = serde_json::to_vec(&input_data)?;
-    let in_size = in_data.len();
-    // Grow up memory size according to in_size to avoid memory leak.
-    memory.grow((in_size >> 16) as u32 + 1)?;
-
-    // Insert the input data into wasm memory.
-    for i in 0..in_size {
-        unsafe {
-            memory.data_unchecked_mut()[wasm_addr + i] = *in_data.get(i).unwrap();
-        }
-    }
-
-    // Invoke `run` export.
-    let run = instance
-        .get_func("run")
-        .ok_or(anyhow::format_err!("failed to find `run` function export!"))?
-        .get2::<i32, i32, i32>()?;
-
-    let out_size = run(wasm_addr as i32, in_size as i32)?;
-    if out_size == 0 {
-        panic!("graph run failed!");
-    }
-
-    let out_data = unsafe { &memory.data_unchecked()[wasm_addr..][..out_size as usize] };
-    let out_vec: Tensor = serde_json::from_slice(out_data).unwrap();
-    Ok(out_vec)
 }
 
 fn output_assert(out_tensor: Tensor) {

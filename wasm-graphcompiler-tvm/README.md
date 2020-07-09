@@ -46,7 +46,7 @@ The figures below demonstrate the whole landscape of running MindSpore model on 
                           ||                                     \/
         _ _ _ _ _ _ _ _   ||   _ _ _ _ _ _ _ _ _ _            _ _ _ _ _
        |               |  \/  |                   |  llvm-ar |         |
-       |  *.wasi.wasm  | <--- | libgraph_wasm32.a | <------- | graph.o |
+       | *.graph.wasm  | <--- | libgraph_wasm32.a | <------- | graph.o |
        |_ _ _ _ _ _ _ _|      |_ _ _ _ _ _ _ _ _ _|          |_ _ _ _ _|
     ```
 
@@ -60,7 +60,7 @@ The figures below demonstrate the whole landscape of running MindSpore model on 
                   ||
            _ _ _ _\/_ _ _ _
           |                |
-          |  *.wasi.wasm   |
+          |  *.graph.wasm  |
           |_ _ _ _ _ _ _ _ |
     ```
 
@@ -86,12 +86,7 @@ This project should be considered **experimental** at the very early stage, all 
     After Rust installed, execute the code below to add `wasm32-wasi` target:
     ```shell
     rustup target add wasm32-wasi
-    cargo install cargo-wasi
     ```
-
-* Wasmtime
-
-    Please NOTICE that [Wasmtime](#system-packages-install) should be installed in advance.
 
 * TVM
 
@@ -122,8 +117,8 @@ This project should be considered **experimental** at the very early stage, all 
 ### Build wasm-graphcompiler-tvm package
 
 ```shell
-cd wasm-graphcompiler && cargo wasi build --release
-cp ./target/wasm32-wasi/release/wasm_graphcompiler_tvm.wasi.wasm ../wasm-graphruntime/tools/
+cd wasm-graphcompiler && cargo build --release
+cp ./target/wasm32-wasi/release/wasm_graphcompiler_tvm.wasm ../wasm-graphruntime/tools/
 ```
 
 ### Test
@@ -152,7 +147,7 @@ Options:
 Next perform model inference using these commands below:
 ```
 $ cd wasm-graphruntime/tools && wget -O cat.png https://github.com/dmlc/mxnet.js/blob/master/data/cat.png?raw=true
-$ wasm-graphruntime -c ./wasm_graphcompiler_tvm.wasi.wasm -i ./cat.png
+$ wasm-graphruntime -c ./wasm_graphcompiler_tvm.wasm -i ./cat.png
 original image dimensions: (256, 256)
 resized image dimensions: (224, 224)
 input image belongs to the class `tabby, tabby cat`
@@ -166,7 +161,7 @@ TODO
 ### Performance benchmark
 
 We are working on several improvements on performances:
-* WebAssembly SIMD support
+* WebAssembly SIMD128 support (**Done**)
 * Auto-tvm enhancement for llvm target
 
 ### Native TVM Rust runtime support
@@ -184,16 +179,6 @@ TODO
 
     ```shell
     curl https://sh.rustup.rs -sSf | sh
-    ```
-
-* wasmtime (latest version)
-
-    If you are running Windows 64-bit, download and run [Wasmtime Installer](https://github.com/CraneStation/wasmtime/releases/download/dev/wasmtime-dev-x86_64-windows.msi) then follow the onscreen instructions.
-
-    If you're a Linux user run the following in your terminal, then follow the onscreen instructions to install `wasmtime`:
-
-    ```shell
-    curl https://wasmtime.dev/install.sh -sSf | bash
     ```
 
 ## Contribution

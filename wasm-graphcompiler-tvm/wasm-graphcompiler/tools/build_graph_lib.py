@@ -44,9 +44,9 @@ def build_graph_lib(model_file, opt_level):
 
     # Compile the relay mod
     mod, params = _get_mod_and_params(model_file)
+    target = 'llvm -target=wasm32-unknown-unknown -mattr=+simd128 --system-lib'
     with tvm.transform.PassContext(opt_level=opt_level):
-        graph_json, lib, params = relay.build(
-            mod, target="llvm -target=wasm32-unknown-unknown --system-lib", params=params)
+        graph_json, lib, params = relay.build(mod, target=target, params=params)
 
     # Save the model artifacts to obj_file
     obj_file = os.path.join(out_dir, 'graph.o')
