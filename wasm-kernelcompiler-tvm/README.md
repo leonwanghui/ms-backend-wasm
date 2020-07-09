@@ -49,7 +49,7 @@ The figures below demonstrates the whole landscape of running MindSpore framewor
                           ||                                         \/
         _ _ _ _ _ _ _ _   ||   _ _ _ _ _ _ _ _ _ _ _            _ _ _ _ _ _ _
        |               |  \/  |                     |  llvm-ar |             |
-       |  *.wasi.wasm  | <--- | libkernel_wasm32.a  | <------- | add.o sub.o |
+       |  libops.wasm  | <--- |   libops_wasm32.a   | <------- | add.o sub.o |
        |_ _ _ _ _ _ _ _|      |_ _ _ _ _ _ _ _ _ _ _|          |_ _ _ _ _ _ _|
     ```
 
@@ -69,7 +69,7 @@ The figures below demonstrates the whole landscape of running MindSpore framewor
                   ||
            _ _ _ _\/_ _ _ _
           |                |
-          |  *.wasi.wasm   |
+          |  libops.wasm   |
           |_ _ _ _ _ _ _ _ |
     ```
 
@@ -95,12 +95,7 @@ This project should be considered **experimental** at the very early stage, all 
     After Rust installed, execute the code below to add `wasm32-wasi` target:
     ```shell
     rustup target add wasm32-wasi
-    cargo install cargo-wasi
     ```
-
-* Wasmtime
-
-    Please NOTICE that [Wasmtime](#system-packages-install) should be installed in advance.
 
 * TVM
 
@@ -115,15 +110,16 @@ This project should be considered **experimental** at the very early stage, all 
 ### Build wasm-kernelcompiler-tvm package
 
 ```shell
-cd wasm-kernelruntime && cargo wasi build --release
-cp ./target/wasm32-wasi/release/wasm_kernelcompiler_tvm.wasi.wasm ../wasm-kernelruntime/config/
+cd wasm-kernelcompiler && python ./tools/build_ops_lib.py
+cargo build --release
+cp ./target/wasm32-wasi/release/wasm_kernelcompiler_tvm.wasm ../wasm-kernelruntime/config/
 ```
 
 ### Test
 
 You can run the command below to install the runtime package for testing (`rust` REQUIRED):
 ```shell
-cd wasm-kernelruntime/ && cargo build --release
+cd wasm-kernelruntime && cargo build --release
 cp ./target/release/wasm-kernelruntime /usr/local/bin/
 ```
 
@@ -142,13 +138,29 @@ Options:
     -h, --help          print this help menu
 ```
 
+Next perform operator execution using these commands below:
+```shell
+~# wasm-kernelruntime -c ./config/wasm_kernelcompiler_tvm.wasm -o Add
+TVM Add operator init success!
+TVM Add operator run success!
+[
+  2.0,
+  3.0,
+  4.0,
+  5.0
+]
+```
+
 ## Future Work
 
 ### Operator enhancement
 TODO
 
 ### Performance benchmark
-TODO
+
+We are working on several improvements on performances:
+* WebAssembly SIMD128 support (**Done**)
+* Operator fusion from MindSpore frontend
 
 ### Native TVM Rust runtime support
 TODO
@@ -165,16 +177,6 @@ TODO
 
     ```shell
     curl https://sh.rustup.rs -sSf | sh
-    ```
-
-* wasmtime (latest version)
-
-    If you are running Windows 64-bit, download and run [Wasmtime Installer](https://github.com/CraneStation/wasmtime/releases/download/dev/wasmtime-dev-x86_64-windows.msi) then follow the onscreen instructions.
-
-    If you're a Linux user run the following in your terminal, then follow the onscreen instructions to install `wasmtime`:
-
-    ```shell
-    curl https://wasmtime.dev/install.sh -sSf | bash
     ```
 
 ## Contribution
