@@ -10,6 +10,14 @@
     - [Framework Landscape](#framework-landscape)
     - [Project Status](#project-status)
     - [PoC Guidelines](#poc-guidelines)
+        - [Pre-installation](#pre-installation)
+        - [Build ResNet50 model](#build-resnet50-model)
+        - [Build wasm-graphcompiler-tvm package](#build-wasm-graphcompiler-tvm-package)
+        - [Test](#test)
+    - [Future Work](#future-work)
+        - [More networks support](#more-networks-support)
+        - [Performance benchmark](#performance-benchmark)
+        - [Native TVM Rust runtime support](#native-tvm-rust-runtime-support)
     - [Appendix](#appendix)
         - [System packages install](#system-packages-install)
     - [Contribution](#contribution)
@@ -20,25 +28,41 @@ After finishing [wasm-kernelcompiler-tvm](../wasm-kernelcompiler-tvm/README.md) 
 
 ## Framework Landscape
 
-The figure below demonstrates the whole landscape of running MindSpore framework on WASM runtime with TVM compiler stack.
-```
+The figures below demonstrate the whole landscape of running MindSpore model on WASM runtime with TVM compiler stack.
+
+* WASM graph compiler stack
+    ```
        _ _ _ _ _ _ _ _ _ _        _ _ _ _ _ _ _        _ _ _ _ _ _ _ _ _ _ _ _
       |                   |      |             |      |                       |
       |  MindSpore Model  | ---> |  ONNX Model | ---> |  TVM Relay Python API |
       |_ _ _ _ _ _ _ _ _ _|      |_ _ _ _ _ _ _|      |_ _ _ _ _ _ _ _ _ _ _ _|
                                                                  ||
-   _ _ _ _ _ _ _ _ _ _ _ _ _ _                                   \/
-  |                           |                         _ _ _ _ _ _ _ _ _ _ _
-  |  MindSpore WASM Backend   |                        |                     |
-  |      (WASM runtime)       |                        |  TVM Compiler Stack |
-  |_ _ _ _ _ _ _ _ _ _ _ _ _ _|                        |_ _ _ _ _ _ _ _ _ _ _|
-              ||                                                 ||
-              \/                                                 \/
-        _ _ _ _ _ _ _ _        _ _ _ _ _ _ _ _ _ _            _ _ _ _ _
-       |               |      |                   |  llvm-ar |         |
-       |  TVM Runtime  | <--- | libgraph_wasm32.a | <------- | graph.o |
+                                                                 \/
+                 _ _ _ _ _ _ _ _ _ _ _                  _ _ _ _ _ _ _ _ _ _ _
+                |                     |                |                     |
+                | WASM Graph Compiler |                |  TVM Compiler Stack |
+                |    (TVM runtime)    |                |_ _ _ _ _ _ _ _ _ _ _|
+                |_ _ _ _ _ _ _ _ _ _ _|                          ||
+                          ||                                     \/
+        _ _ _ _ _ _ _ _   ||   _ _ _ _ _ _ _ _ _ _            _ _ _ _ _
+       |               |  \/  |                   |  llvm-ar |         |
+       |  *.wasi.wasm  | <--- | libgraph_wasm32.a | <------- | graph.o |
        |_ _ _ _ _ _ _ _|      |_ _ _ _ _ _ _ _ _ _|          |_ _ _ _ _|
-```
+    ```
+
+* WASM graph runtime
+    ```
+         _ _ _ _ _ _ _ _ _ _ _
+        |                     |
+        | WASM Graph Runtime  |
+        |   (WASM runtime)    |
+        |_ _ _ _ _ _ _ _ _ _ _|
+                  ||
+           _ _ _ _\/_ _ _ _
+          |                |
+          |  *.wasi.wasm   |
+          |_ _ _ _ _ _ _ _ |
+    ```
 
 ## Project Status
 
@@ -53,21 +77,69 @@ This project should be considered **experimental** at the very early stage, all 
 
 ## PoC Guidelines
 
-Before running this demo, please make sure [`Rust`](#system-packages-install) has been installed.
+### Pre-installation
 
-Next run the command below to install the frontend package for testing (`rust` REQUIRED):
+* Rust
+
+    Before running this demo, please make sure [Rust](#system-packages-install) has been installed.
+
+    After Rust installed, execute the code below to add `wasm32-wasi` target:
+    ```shell
+    rustup target add wasm32-wasi
+    cargo install cargo-wasi
+    ```
+
+* Wasmtime
+
+    Please NOTICE that [Wasmtime](#system-packages-install) should be installed in advance.
+
+* TVM
+
+    Please follow TVM [installations](https://tvm.apache.org/docs/install/index.html), `export TVM_HOME=/path/to/tvm` and add `libtvm_runtime` to your `LD_LIBRARY_PATH`.
+
+    *Note:* To run the end-to-end examples and tests, `tvm` and `topi` need to be added to your `PYTHONPATH` or it's automatic via an Anaconda environment when it is installed individually.
+
+* LLVM
+
+    `LLVM 10.0` or later is REQUIRED.
+
+### Build ResNet50 model
+
+- Build DL library in the WebAssembly format.
+
+  - Download model
+
+    ```
+    cd wasm-graphcompiler/tools && wget https://s3.amazonaws.com/onnx-model-zoo/resnet/resnet50v1/resnet50v1.onnx
+    ```
+
+  - Compile
+
+    ```
+    LLVM_AR=llvm-ar-10 python ./build_grpah_lib.py -O3 ./resnet50v1.onnx
+    ```
+
+### Build wasm-graphcompiler-tvm package
 
 ```shell
-cd scenarios/ms-nonweb-plat/wasm-graphfrontend/ && cargo build --release
-cp ./target/release/wasm-graphfrontend /usr/local/bin/
+cd wasm-graphcompiler && cargo wasi build --release
+cp ./target/wasm32-wasi/release/wasm_graphcompiler_tvm.wasi.wasm ../wasm-graphruntime/tools/
 ```
 
-Check the usage of `wasm-graphfrontend`:
+### Test
+
+You can run the command below to install the runtime package for testing (`rust` REQUIRED):
+```shell
+cd wasm-graphruntime/ && cargo build --release
+cp ./target/release/wasm-graphruntime /usr/local/bin/
+```
+
+Check the usage of `wasm-graphruntime`:
 
 ```shell
-~# wasm-graphfrontend -h
+~# wasm-graphruntime -h
 
-Usage: wasm-graphfrontend [options]
+Usage: wasm-graphruntime [options]
 
 Options:
     -c, --ms-backend-config FILE_PATH
@@ -76,6 +148,29 @@ Options:
                         set the path to input image file
     -h, --help          print this help menu
 ```
+
+Next perform model inference using these commands below:
+```
+$ cd wasm-graphruntime/tools && wget -O cat.png https://github.com/dmlc/mxnet.js/blob/master/data/cat.png?raw=true
+$ wasm-graphruntime -c ./wasm_graphcompiler_tvm.wasi.wasm -i ./cat.png
+original image dimensions: (256, 256)
+resized image dimensions: (224, 224)
+input image belongs to the class `tabby, tabby cat`
+```
+
+## Future Work
+
+### More networks support
+TODO
+
+### Performance benchmark
+
+We are working on several improvements on performances:
+* WebAssemvly SIMD support
+* Auto-tvm enhancement for llvm target
+
+### Native TVM Rust runtime support
+TODO
 
 ## Appendix
 
@@ -89,6 +184,16 @@ Options:
 
     ```shell
     curl https://sh.rustup.rs -sSf | sh
+    ```
+
+* wasmtime (latest version)
+
+    If you are running Windows 64-bit, download and run [Wasmtime Installer](https://github.com/CraneStation/wasmtime/releases/download/dev/wasmtime-dev-x86_64-windows.msi) then follow the onscreen instructions.
+
+    If you're a Linux user run the following in your terminal, then follow the onscreen instructions to install `wasmtime`:
+
+    ```shell
+    curl https://wasmtime.dev/install.sh -sSf | bash
     ```
 
 ## Contribution

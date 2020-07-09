@@ -10,6 +10,13 @@
     - [Framework Landscape](#framework-landscape)
     - [Project Status](#project-status)
     - [PoC Guidelines](#poc-guidelines)
+        - [Pre-installation](#pre-installation)
+        - [Build wasm-kernelcompiler-tvm package](#build-wasm-kernelcompiler-tvm-package)
+        - [Test](#test)
+    - [Future Work](#future-work)
+        - [Operator enhancement](#operator-enhancement)
+        - [Performance benchmark](#performance-benchmark)
+        - [Native TVM Rust runtime support](#native-tvm-rust-runtime-support)
     - [Appendix](#appendix)
         - [System packages install](#system-packages-install)
     - [Contribution](#contribution)
@@ -24,26 +31,47 @@ As demonstrated in TVM runtime [tutorials](https://tvm.apache.org/docs/tutorials
 
 ## Framework Landscape
 
-The figure below demonstrates the whole landscape of running MindSpore framework on WASM runtime with TVM compiler stack.
-```
- _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-|                               |                       _ _ _ _ _ _ _ _ _ _ _
-| MindSpore Frontend Expression |                      |                     |
-|_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _|                      | TVM (TE) Python API |
-              ||                                       |_ _ _ _ _ _ _ _ _ _ _|
-              \/                                                 ||
-   _ _ _ _ _ _ _ _ _ _ _ _ _ _                                   \/
-  |                           |                         _ _ _ _ _ _ _ _ _ _ _
-  |  MindSpore WASM Backend   |                        |                     |
-  |      (WASM runtime)       |                        |  TVM Compiler Stack |
-  |_ _ _ _ _ _ _ _ _ _ _ _ _ _|                        |_ _ _ _ _ _ _ _ _ _ _|
-              ||                                                 ||
-              \/                                                 \/
-        _ _ _ _ _ _ _ _        _ _ _ _ _ _ _ _ _            _ _ _ _ _ _ _
-       |               |      |                 |  llvm-ar |             |
-       |  TVM Runtime  | <--- | libops_wasm32.a | <------- | add.o sub.o |
-       |_ _ _ _ _ _ _ _|      |_ _ _ _ _ _ _ _ _|          |_ _ _ _ _ _ _|
-```
+The figures below demonstrates the whole landscape of running MindSpore framework on WASM runtime with TVM compiler stack.
+
+* WASM kernel compiler stack
+    ```
+                                                            _ _ _ _ _ _ _ _ _ _ _
+                                                           |                     |
+                                                           | TVM (TE) Python API |
+                                                           |_ _ _ _ _ _ _ _ _ _ _|
+                                                                     ||
+                                                                     \/
+                _ _ _ _ _ _ _ _ _ _ _ _                     _ _ _ _ _ _ _ _ _ _ _
+               |                       |                   |                     |
+               | WASM Kernel Compiler  |                   |  TVM Compiler Stack |
+               |    (TVM runtime)      |                   |_ _ _ _ _ _ _ _ _ _ _|
+               |_ _ _ _ _ _ _ _ _ _ _ _|                             ||
+                          ||                                         \/
+        _ _ _ _ _ _ _ _   ||   _ _ _ _ _ _ _ _ _ _ _            _ _ _ _ _ _ _
+       |               |  \/  |                     |  llvm-ar |             |
+       |  *.wasi.wasm  | <--- | libkernel_wasm32.a  | <------- | add.o sub.o |
+       |_ _ _ _ _ _ _ _|      |_ _ _ _ _ _ _ _ _ _ _|          |_ _ _ _ _ _ _|
+    ```
+
+* WASM kernel runtime
+    ```
+     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    |                               |
+    | MindSpore Frontend Expression |
+    |_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _|
+                  ||
+                  \/
+         _ _ _ _ _ _ _ _ _ _ _
+        |                     |
+        | WASM Kernel Runtime |
+        |   (WASM runtime)    |
+        |_ _ _ _ _ _ _ _ _ _ _|
+                  ||
+           _ _ _ _\/_ _ _ _
+          |                |
+          |  *.wasi.wasm   |
+          |_ _ _ _ _ _ _ _ |
+    ```
 
 ## Project Status
 
@@ -58,21 +86,53 @@ This project should be considered **experimental** at the very early stage, all 
 
 ## PoC Guidelines
 
-Before running this demo, please make sure [`Rust`](#system-packages-install) has been installed.
+### Pre-installation
 
-Next run the command below to install the frontend package for testing (`rust` REQUIRED):
+* Rust
+
+    Before running this demo, please make sure [Rust](#system-packages-install) has been installed.
+
+    After Rust installed, execute the code below to add `wasm32-wasi` target:
+    ```shell
+    rustup target add wasm32-wasi
+    cargo install cargo-wasi
+    ```
+
+* Wasmtime
+
+    Please NOTICE that [Wasmtime](#system-packages-install) should be installed in advance.
+
+* TVM
+
+    Please follow TVM [installations](https://tvm.apache.org/docs/install/index.html), `export TVM_HOME=/path/to/tvm` and add `libtvm_runtime` to your `LD_LIBRARY_PATH`.
+
+    *Note:* To run the end-to-end examples and tests, `tvm` and `topi` need to be added to your `PYTHONPATH` or it's automatic via an Anaconda environment when it is installed individually.
+
+* LLVM
+
+    `LLVM 10.0` or later is REQUIRED.
+
+### Build wasm-kernelcompiler-tvm package
 
 ```shell
-cd scenarios/ms-nonweb-plat/wasm-kernelfrontend/ && cargo build --release
-cp ./target/release/wasm-kernelfrontend /usr/local/bin/
+cd wasm-kernelruntime && cargo wasi build --release
+cp ./target/wasm32-wasi/release/wasm_kernelcompiler_tvm.wasi.wasm ../wasm-kernelruntime/config/
 ```
 
-Check the usage of `wasm-kernelfrontend`:
+### Test
+
+You can run the command below to install the runtime package for testing (`rust` REQUIRED):
+```shell
+cd wasm-kernelruntime/ && cargo build --release
+cp ./target/release/wasm-kernelruntime /usr/local/bin/
+```
+
+Check the usage of `wasm-kernelruntime`:
 
 ```shell
-~# wasm-kernelfrontend -h
+~# wasm-kernelruntime -h
 
-Usage: wasm-kernelfrontend [options]
+Usage: wasm-kernelruntime [options]
 
 Options:
     -c, --ms-backend-config FILE_PATH
@@ -81,6 +141,17 @@ Options:
                         Sub, default: Add.
     -h, --help          print this help menu
 ```
+
+## Future Work
+
+### Operator enhancement
+TODO
+
+### Performance benchmark
+TODO
+
+### Native TVM Rust runtime support
+TODO
 
 ## Appendix
 
@@ -94,6 +165,16 @@ Options:
 
     ```shell
     curl https://sh.rustup.rs -sSf | sh
+    ```
+
+* wasmtime (latest version)
+
+    If you are running Windows 64-bit, download and run [Wasmtime Installer](https://github.com/CraneStation/wasmtime/releases/download/dev/wasmtime-dev-x86_64-windows.msi) then follow the onscreen instructions.
+
+    If you're a Linux user run the following in your terminal, then follow the onscreen instructions to install `wasmtime`:
+
+    ```shell
+    curl https://wasmtime.dev/install.sh -sSf | bash
     ```
 
 ## Contribution
