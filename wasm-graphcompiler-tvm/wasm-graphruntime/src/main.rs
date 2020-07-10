@@ -1,7 +1,5 @@
 #[macro_use]
 extern crate serde_derive;
-extern crate csv;
-extern crate image;
 
 pub mod types;
 use types::Tensor;
@@ -10,7 +8,7 @@ mod runtime;
 use getopts::Options;
 use image::{FilterType, GenericImageView};
 use ndarray::Array;
-use std::{collections::HashMap, env};
+use std::{collections::HashMap, env, fs::File, io::BufReader};
 
 const IMG_HEIGHT: usize = 224;
 const IMG_WIDTH: usize = 224;
@@ -37,6 +35,12 @@ fn main() {
         "set the path to input image file",
         "FILE_PATH",
     );
+    opts.optopt(
+        "l",
+        "label-class-file",
+        "set the path to label class file",
+        "FILE_PATH",
+    );
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -54,6 +58,10 @@ fn main() {
         Some(s) => s,
         None => String::from(""),
     };
+    let label_class_file: String = match matches.opt_str("l") {
+        Some(s) => s,
+        None => String::from(""),
+    };
     let img = image::open(input_data_file).unwrap();
     let input = data_preprocess(img);
 
@@ -61,7 +69,7 @@ fn main() {
         Ok(m) => m,
         Err(f) => panic!(f.to_string()),
     };
-    output_assert(output);
+    output_assert(output, label_class_file);
 }
 
 fn data_preprocess(img: image::DynamicImage) -> Tensor {
@@ -92,7 +100,7 @@ fn data_preprocess(img: image::DynamicImage) -> Tensor {
     return Tensor::from(arr);
 }
 
-fn output_assert(out_tensor: Tensor) {
+fn output_assert(out_tensor: Tensor, label_class_file: String) {
     let output = out_tensor.to_vec::<f32>();
 
     // Find the maximum entry in the output and its index.
@@ -107,9 +115,9 @@ fn output_assert(out_tensor: Tensor) {
 
     // Create a hash map of (class id, class name)
     let mut synset: HashMap<i32, String> = HashMap::new();
-    let mut rdr = csv::ReaderBuilder::new().from_reader(
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tools/synset.csv")).as_bytes(),
-    );
+    let mut rdr = csv::ReaderBuilder::new().from_reader(BufReader::new(
+        File::open(label_class_file.as_str()).unwrap(),
+    ));
 
     for result in rdr.records() {
         let record = result.unwrap();

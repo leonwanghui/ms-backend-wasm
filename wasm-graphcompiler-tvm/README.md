@@ -141,13 +141,15 @@ Options:
                         set wasm backend config file
     -i, --input-data-file FILE_PATH
                         set the path to input image file
+    -l, --label-class-file FILE_PATH
+                        set the path to label class file
     -h, --help          print this help menu
 ```
 
 Next perform model inference using these commands below:
 ```
 $ cd wasm-graphruntime/tools && wget -O cat.png https://github.com/dmlc/mxnet.js/blob/master/data/cat.png?raw=true
-$ wasm-graphruntime -c ./wasm_graphcompiler_tvm.wasm -i ./cat.png
+$ wasm-graphruntime -c ./wasm_graphcompiler_tvm.wasm -i ./cat.png -l ./synset.csv
 original image dimensions: (256, 256)
 resized image dimensions: (224, 224)
 input image belongs to the class `tabby, tabby cat`
