@@ -17,7 +17,7 @@
  * under the License.
  */
 
-use super::types::Tensor;
+use super::Tensor;
 use anyhow::Result;
 use serde_json;
 use wasmtime::*;
@@ -69,7 +69,7 @@ impl GraphExecutor {
             .ok_or(anyhow::format_err!("failed to find `memory` export"))?;
 
         // Specify the wasm address to access the wasm memory.
-        self.wasm_addr = memory.data_size() as i32;
+        let wasm_addr = memory.data_size();
         // Serialize the data into a JSON string.
         let in_data = serde_json::to_vec(&input_data)?;
         let in_size = in_data.len();
@@ -79,10 +79,12 @@ impl GraphExecutor {
         // Insert the input data into wasm memory.
         for i in 0..in_size {
             unsafe {
-                memory.data_unchecked_mut()[self.wasm_addr as usize + i] = *in_data.get(i).unwrap();
+                memory.data_unchecked_mut()[wasm_addr + i] = *in_data.get(i).unwrap();
             }
         }
 
+        self.wasm_addr = wasm_addr as i32;
+        self.input_size = in_size as i32;
         Ok(())
     }
 

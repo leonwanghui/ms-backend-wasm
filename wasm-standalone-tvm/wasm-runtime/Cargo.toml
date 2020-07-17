@@ -25,13 +25,6 @@ repository = "https://github.com/apache/incubator-tvm"
 license = "Apache-2.0"
 keywords = ["wasm", "machine learning", "wasmtime"]
 
-[profile.release]
-lto = true
-opt-level = 's'
-
-[lib]
-crate-type = ['cdylib']
-
 [dependencies]
 wasmtime = "0.16.0"
 wasmtime-wasi = "0.16.0"

@@ -34,9 +34,9 @@ fn main() {
 
     let mut opts = Options::new();
     opts.optopt(
-        "c",
-        "ms-backend-config",
-        "set wasm backend config file",
+        "k",
+        "wasm-kernel-file",
+        "set the path to wasm kernel file",
         "FILE_PATH",
     );
     opts.optopt(
@@ -55,7 +55,7 @@ fn main() {
         print_usage(&program, opts);
         return;
     }
-    let wasm_backend_file: String = match matches.opt_str("c") {
+    let wasm_kernel_file: String = match matches.opt_str("k") {
         Some(s) => s,
         None => String::from(""),
     };
@@ -76,8 +76,8 @@ fn main() {
     let b_tensor: Tensor = b.into();
     let c_tensor: Tensor = c.into();
 
-    let kernel_exec = KernelExecutor::new();
-    kernel_exec.instantiate(wasm_backend_file).unwrap();
+    let mut kernel_exec = KernelExecutor::new();
+    kernel_exec.instantiate(wasm_kernel_file).unwrap();
     kernel_exec
         .set_input(vec![a_tensor, b_tensor, c_tensor])
         .unwrap();
@@ -88,6 +88,6 @@ fn main() {
     };
     println!(
         "{}",
-        serde_json::to_string_pretty(&result.to_vec::<f32>()).unwrap()
+        serde_json::to_string_pretty(&output.to_vec::<f32>()).unwrap()
     );
 }

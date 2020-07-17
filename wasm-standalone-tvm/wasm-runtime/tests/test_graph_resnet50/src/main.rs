@@ -78,7 +78,7 @@ fn main() {
     let img = image::open(input_data_file).unwrap();
     let input = data_preprocess(img);
 
-    let graph_exec = GraphExecutor::new();
+    let mut graph_exec = GraphExecutor::new();
     graph_exec.instantiate(wasm_graph_file).unwrap();
     graph_exec.set_input(input).unwrap();
     graph_exec.run().unwrap();

@@ -18,6 +18,7 @@
 [package]
 name = "test_graph_resnet50"
 version = "0.1.0"
+license = "Apache-2.0"
 authors = ["TVM Contributors"]
 edition = "2018"
 
@@ -26,4 +27,4 @@ getopts = "0.2.21"
 ndarray = "0.12"
 csv = "1.1"
 image = "0.20"
-wasm-runtime = { version = "0.1", path = "../../../" }
+wasm-runtime = { path = "../../" }
