@@ -64,7 +64,7 @@ def build_graph_lib(model_file, opt_level):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='ONNX ResNet50 model build example')
+    parser = argparse.ArgumentParser(description='ONNX model build example')
     parser.add_argument('model_file', type=str, help='the path of onnx model file')
     parser.add_argument('-O', '--opt-level', type=int, default=0,
                         help='level of optimization. 0 is unoptimized and 3 is the highest level')

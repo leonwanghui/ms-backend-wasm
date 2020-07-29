@@ -21,15 +21,15 @@
 extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
-extern crate ndarray;
-extern crate tvm_runtime;
 
 mod types;
-use types::Tensor;
 mod utils;
 
 use std::{collections::HashMap, convert::TryFrom, env, sync::Mutex};
-use tvm_runtime::{Graph, GraphExecutor, SystemLibModule, Tensor as TVMTensor};
+
+use tvm_graph_rt::{Graph, GraphExecutor, SystemLibModule, Tensor as TVMTensor};
+
+use types::Tensor;
 
 extern "C" {
     fn __wasm_call_ctors();
@@ -50,7 +50,7 @@ lazy_static! {
         .unwrap();
         let params_bytes =
             include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/lib/graph.params"));
-        let params = tvm_runtime::load_param_dict(params_bytes)
+        let params = tvm_graph_rt::load_param_dict(params_bytes)
             .unwrap()
             .into_iter()
             .map(|(k, v)| (k, v.to_owned()))
@@ -65,7 +65,7 @@ lazy_static! {
 
 #[no_mangle]
 pub extern "C" fn run(wasm_addr: i32, in_size: i32) -> i32 {
-    let in_tensor = utils::load_input(wasm_addr, in_size as usize);
+    let in_tensor = unsafe { utils::load_input(wasm_addr, in_size as usize) };
     let input: TVMTensor = in_tensor.as_dltensor().into();
 
     GRAPH_EXECUTOR.lock().unwrap().set_input("data", input);
@@ -78,6 +78,6 @@ pub extern "C" fn run(wasm_addr: i32, in_size: i32) -> i32 {
         .as_dltensor(false);
 
     let out_tensor: Tensor = output.into();
-    let out_size = utils::store_output(wasm_addr, out_tensor);
+    let out_size = unsafe { utils::store_output(wasm_addr, out_tensor) };
     out_size as i32
 }

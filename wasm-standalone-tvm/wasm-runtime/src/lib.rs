@@ -21,9 +21,7 @@
 extern crate serde_derive;
 
 mod graph;
-mod kernel;
 mod types;
 
 pub use graph::GraphExecutor;
-pub use kernel::KernelExecutor;
 pub use types::Tensor;

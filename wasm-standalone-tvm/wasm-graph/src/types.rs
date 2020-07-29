@@ -19,12 +19,11 @@
 
 use std::{
     any::TypeId,
-    convert::From,
     os::raw::{c_int, c_void},
     slice,
 };
-pub use tvm_common::ffi::DLTensor;
-use tvm_common::ffi::{
+pub use tvm_sys::ffi::DLTensor;
+use tvm_sys::ffi::{
     DLContext, DLDataType, DLDataTypeCode_kDLFloat, DLDataTypeCode_kDLInt, DLDeviceType_kDLCPU,
 };
 
@@ -89,10 +88,10 @@ pub struct Tensor {
 impl Tensor {
     pub fn new(dtype: DataType, shape: Vec<i64>, strides: Vec<usize>, data: Vec<u8>) -> Self {
         Tensor {
-            dtype: dtype,
-            shape: shape,
+            dtype,
+            shape,
             strides: Some(strides),
-            data: data,
+            data,
         }
     }
 

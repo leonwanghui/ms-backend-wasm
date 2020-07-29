@@ -34,7 +34,6 @@
         - [Native TVM Rust runtime support](#native-tvm-rust-runtime-support)
     - [Appendix](#appendix)
         - [System packages install](#system-packages-install)
-    - [Contribution](#contribution)
 
 ## Motivation
 
@@ -56,7 +55,7 @@ The figures below demonstrate the whole landscape of running deep learning frame
                                                                  \/
                  _ _ _ _ _ _ _ _ _ _ _                  _ _ _ _ _ _ _ _ _ _ _
                 |                     |                |                     |
-                | WASM Graph AppCode  |                |  TVM Compiler Stack |
+                | WASM Graph Builder  |                |  TVM Compiler Stack |
                 |    (TVM runtime)    |                |_ _ _ _ _ _ _ _ _ _ _|
                 |_ _ _ _ _ _ _ _ _ _ _|                          ||
                           ||                                     \/
@@ -70,7 +69,7 @@ The figures below demonstrate the whole landscape of running deep learning frame
     ```
          _ _ _ _ _ _ _ _ _ _ _
         |                     |
-        | WASM Graph AppCode  |
+        |  WASM Graph Loader  |
         |   (WASM runtime)    |
         |_ _ _ _ _ _ _ _ _ _ _|
                   ||
@@ -133,7 +132,7 @@ This project should be considered **experimental** at the very early stage, all 
 
 ```shell
 cd wasm-graph && cargo build --release
-cp ./target/wasm32-wasi/release/wasm_graph.wasm ../wasm-graphruntime/tools/
+cp ./target/wasm32-wasi/release/wasm_graph.wasm ./lib/wasm_graph_resnet50.wasm
 ```
 
 ### Test
@@ -143,16 +142,15 @@ Before running this demo, please make sure [`Rust`](#system-packages-install) ha
 Next run the command below to install the runtime package for testing (`rust` REQUIRED):
 
 ```shell
-cd wasm-graphruntime/ && cargo build --release
-cp ./target/release/wasm-graphruntime /usr/local/bin/
+cd wasm-runtime/tests/test_graph_resnet50 && cargo build
 ```
 
-Check the usage of `wasm-graphruntime`:
+Check the usage of `test_graph_resnet50`:
 
 ```shell
-~# wasm-graphruntime -h
+~# ./target/debug/test_graph_resnet50 -h
 
-Usage: wasm-graphruntime [options]
+Usage: ./target/debug/test_graph_resnet50 [options]
 
 Options:
     -g, --wasm-graph-file FILE_PATH
@@ -166,9 +164,10 @@ Options:
 
 Next perform model inference using these commands below:
 ```
-$ cd wasm-graphruntime/tools && wget -O cat.png https://github.com/dmlc/mxnet.js/blob/master/data/cat.png?raw=true
-$ wget -O synset.csv https://raw.githubusercontent.com/leonwanghui/ms-backend-wasm/master/wasm-graphcompiler-tvm/wasm-graphruntime/tools/synset.csv
-$ wasm-graphruntime -c ./wasm_graph.wasm -i ./cat.png -l ./synset.csv
+$ cp ../../../wasm-graph/lib/wasm_graph_resnet50.wasm ./
+$ wget -O cat.png https://github.com/dmlc/mxnet.js/blob/master/data/cat.png?raw=true
+$ wget -O synset.csv https://raw.githubusercontent.com/kazum/tvm-wasm/master/synset.csv
+$ ./target/debug/test_graph_resnet50 -g ./wasm_graph_resnet50.wasm -i ./cat.png -l ./synset.csv
 original image dimensions: (256, 256)
 resized image dimensions: (224, 224)
 input image belongs to the class `tabby, tabby cat`
@@ -201,7 +200,3 @@ TODO
     ```shell
     curl https://sh.rustup.rs -sSf | sh
     ```
-
-## Contribution
-
-Lastly very thanks [@kazum](https://github.com/kazum) for having offered a lot of help when implementing this project.
